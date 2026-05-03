@@ -2424,6 +2424,58 @@ h1 {
   opacity: 0;
 }
 
+/* ── Frame Loading Overlay ──────────────────────────────────────── */
+
+#frameLoader {
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+  background: #020407;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: opacity 600ms ease, transform 600ms ease;
+}
+
+#frameLoader.fl-done {
+  opacity: 0;
+  pointer-events: none;
+}
+
+.fl-inner {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 20px;
+  width: min(320px, 80vw);
+}
+
+.fl-bar-wrap {
+  width: 100%;
+  height: 2px;
+  background: rgba(255,255,255,0.08);
+  border-radius: 99px;
+  overflow: hidden;
+}
+
+.fl-bar {
+  height: 100%;
+  width: 0%;
+  background: linear-gradient(90deg, var(--cyan), var(--purple));
+  border-radius: 99px;
+  transition: width 120ms linear;
+  box-shadow: 0 0 12px rgba(70,217,255,0.6);
+}
+
+.fl-label {
+  margin: 0;
+  font-size: 0.78rem;
+  font-weight: 700;
+  color: var(--quiet);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
 /* ── SPA Router ─────────────────────────────────────────────────── */
 
 #appRoot {

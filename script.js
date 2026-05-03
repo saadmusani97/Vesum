@@ -1,33 +1,34 @@
 const frameConfig = {
   framePath: "./frames",
-  totalFrames: 700,   // trim last 100 heavy frames for performance
+  totalFrames: 700,
   pad: 6,
 };
 
 const hero   = document.getElementById("sequenceHero");
 const canvas = document.getElementById("heroCanvas");
 const ctx    = canvas.getContext("2d", { alpha: false, desynchronized: true });
-ctx.imageSmoothingEnabled = false; // no smoothing needed — faster
+ctx.imageSmoothingEnabled = false;
 
-const prefersReducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 const isMobile = window.matchMedia("(max-width: 720px)").matches;
-
-// On mobile load every 3rd frame, desktop every frame
-const stride       = isMobile ? 3 : 1;
+const stride   = isMobile ? 3 : 1;
 const totalDisplay = Math.ceil(frameConfig.totalFrames / stride);
 
-// ── Frame cache — ImageBitmap for zero-copy GPU draw ─────────────
-const cache   = new Array(totalDisplay).fill(null); // index = display index
-const loaded  = new Uint8Array(totalDisplay);        // 1 = loaded
-let   loadedCount = 0;
-let   sequenceReady = false;
+// ── Cache ─────────────────────────────────────────────────────────
+const cache  = new Array(totalDisplay).fill(null);
+const loaded = new Uint8Array(totalDisplay);
+let loadedCount = 0;
 
-let currentDisplayIndex = 0;
-let targetDisplayIndex  = 0;
-let lastDrawnIndex      = -1;
-let renderRaf           = 0;
-let raf                 = 0;
-let cssWidth = 0, cssHeight = 0;
+// How many frames must be ready before we unlock scrolling
+const READY_THRESHOLD = isMobile ? 60 : 150;
+
+let sequenceReady   = false;
+let sequenceSkipped = false;
+let targetDisplayIndex = 0;
+let lastDrawnIndex     = -1;
+let renderRaf = 0;
+let raf       = 0;
+let cssWidth  = 0;
+let cssHeight = 0;
 
 function frameUrl(displayIndex) {
   const realIndex = Math.min(displayIndex * stride, frameConfig.totalFrames - 1);
@@ -36,47 +37,69 @@ function frameUrl(displayIndex) {
 
 function clamp(v, min, max) { return Math.min(Math.max(v, min), max); }
 
+// ── Loading overlay ───────────────────────────────────────────────
+const loadingOverlay = document.createElement("div");
+loadingOverlay.id = "frameLoader";
+loadingOverlay.innerHTML = `
+  <div class="fl-inner">
+    <div class="fl-bar-wrap"><div class="fl-bar" id="flBar"></div></div>
+    <p class="fl-label" id="flLabel">Loading experience…</p>
+  </div>`;
+document.body.appendChild(loadingOverlay);
+
+const flBar   = document.getElementById("flBar");
+const flLabel = document.getElementById("flLabel");
+
+function updateLoadingUI() {
+  const pct = Math.round((loadedCount / READY_THRESHOLD) * 100);
+  if (flBar)   flBar.style.width = `${Math.min(pct, 100)}%`;
+  if (flLabel) flLabel.textContent = pct < 100 ? `Loading… ${Math.min(pct, 100)}%` : "Ready";
+}
+
+function hideLoadingOverlay() {
+  loadingOverlay.classList.add("fl-done");
+  setTimeout(() => loadingOverlay.remove(), 600);
+}
+
 // ── Draw ──────────────────────────────────────────────────────────
-function drawFrame(displayIndex) {
-  const bmp = cache[displayIndex];
+function drawFrame(idx) {
+  const bmp = cache[idx];
   if (!bmp) return;
-  const iw = bmp.width, ih = bmp.height;
+  const iw = bmp.width || bmp.naturalWidth;
+  const ih = bmp.height || bmp.naturalHeight;
   const cw = canvas.width, ch = canvas.height;
   const scale = Math.max(cw / iw, ch / ih);
   const dw = iw * scale, dh = ih * scale;
-  const dx = (cw - dw) / 2, dy = (ch - dh) / 2;
-  ctx.drawImage(bmp, dx, dy, dw, dh);
-  lastDrawnIndex = displayIndex;
+  ctx.drawImage(bmp, (cw - dw) / 2, (ch - dh) / 2, dw, dh);
+  lastDrawnIndex = idx;
 }
 
-// ── Render loop — smooth interpolation ───────────────────────────
+// ── Render loop ───────────────────────────────────────────────────
 function renderLoop() {
-  if (sequenceReady) {
-    // Snap directly — no lerp, scroll position IS the frame
-    if (targetDisplayIndex !== lastDrawnIndex) {
-      // Find closest loaded frame if target not ready
-      let idx = targetDisplayIndex;
-      if (!loaded[idx]) {
-        let best = lastDrawnIndex >= 0 ? lastDrawnIndex : 0;
-        let bestDist = Math.abs(best - idx);
-        for (let i = Math.max(0, idx - 8); i <= Math.min(totalDisplay - 1, idx + 8); i++) {
-          if (loaded[i] && Math.abs(i - idx) < bestDist) { best = i; bestDist = Math.abs(i - idx); }
-        }
-        idx = best;
+  if (sequenceReady && !sequenceSkipped) {
+    let idx = targetDisplayIndex;
+    // Find nearest loaded frame if target not ready yet
+    if (!loaded[idx]) {
+      let best = lastDrawnIndex >= 0 ? lastDrawnIndex : 0;
+      let bestDist = Math.abs(best - idx);
+      const search = 20;
+      for (let i = Math.max(0, idx - search); i <= Math.min(totalDisplay - 1, idx + search); i++) {
+        if (loaded[i] && Math.abs(i - idx) < bestDist) { best = i; bestDist = Math.abs(i - idx); }
       }
-      if (idx !== lastDrawnIndex) drawFrame(idx);
+      idx = best;
     }
+    if (idx !== lastDrawnIndex) drawFrame(idx);
   }
   renderRaf = requestAnimationFrame(renderLoop);
 }
 
-// ── Scroll handler ────────────────────────────────────────────────
+// ── Scroll ────────────────────────────────────────────────────────
 function updateFromScroll() {
   raf = 0;
+  if (!sequenceReady || sequenceSkipped) return;
   const rect = hero.getBoundingClientRect();
   const scrollable = hero.offsetHeight - window.innerHeight;
   const progress = scrollable > 0 ? clamp(-rect.top / scrollable, 0, 1) : 0;
-
   targetDisplayIndex = Math.round(progress * (totalDisplay - 1));
 
   const nextOpacity = clamp((progress - 0.88) / 0.12, 0, 1);
@@ -108,55 +131,48 @@ function resizeCanvas() {
   if (lastDrawnIndex >= 0) drawFrame(lastDrawnIndex);
 }
 
-// ── Preload ALL frames in parallel batches ────────────────────────
-// Load first 30 frames immediately (high priority), then rest in background
+// ── Preload all frames ────────────────────────────────────────────
 function preloadAllFrames() {
-  const BATCH = isMobile ? 4 : 12; // concurrent requests
+  const BATCH = isMobile ? 4 : 16;
   let nextToLoad = 0;
-  let done = 0;
 
   function loadOne(i) {
     const img = new Image();
     img.decoding = "async";
     img.onload = async () => {
-      try {
-        // ImageBitmap = GPU-ready, zero-copy draw
-        cache[i] = await createImageBitmap(img);
-      } catch {
-        cache[i] = img; // fallback to HTMLImageElement
-      }
+      try { cache[i] = await createImageBitmap(img); }
+      catch { cache[i] = img; }
       loaded[i] = 1;
       loadedCount++;
-      done++;
+      updateLoadingUI();
 
-      // Mark ready once first 30 frames loaded
-      if (!sequenceReady && loadedCount >= Math.min(30, totalDisplay)) {
+      // Unlock sequence once threshold reached
+      if (!sequenceReady && loadedCount >= READY_THRESHOLD) {
         sequenceReady = true;
         drawFrame(0);
+        hideLoadingOverlay();
+        requestScrollUpdate();
       }
 
-      // Pump next
       if (nextToLoad < totalDisplay) loadOne(nextToLoad++);
     };
     img.onerror = () => {
-      done++;
-      if (i === 0) skipSequenceHero();
+      if (i === 0) { skipSequenceHero(); return; }
       if (nextToLoad < totalDisplay) loadOne(nextToLoad++);
     };
     img.src = frameUrl(i);
   }
 
-  // Kick off initial batch — prioritise first 30 frames
-  const initialBatch = Math.min(BATCH, totalDisplay);
-  for (let i = 0; i < initialBatch; i++) loadOne(nextToLoad++);
+  const initial = Math.min(BATCH, totalDisplay);
+  for (let i = 0; i < initial; i++) loadOne(nextToLoad++);
 }
 
 // ── No-frames fallback ────────────────────────────────────────────
-let sequenceSkipped = false;
 function skipSequenceHero() {
   if (sequenceSkipped) return;
   sequenceSkipped = true;
   cancelAnimationFrame(renderRaf);
+  loadingOverlay.remove();
   const root = document.documentElement;
   root.style.setProperty("--progress",         "1");
   root.style.setProperty("--meter-height",     "100%");
@@ -177,7 +193,6 @@ window.addEventListener("scroll", requestScrollUpdate, { passive: true });
 window.addEventListener("resize", () => { resizeCanvas(); requestScrollUpdate(); });
 renderLoop();
 preloadAllFrames();
-requestScrollUpdate();
 
 const navbar = document.getElementById("navbar");
 const navIndicator = document.querySelector(".nav-indicator");
