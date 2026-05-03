@@ -1180,15 +1180,14 @@ document.getElementById("paymentDoneBtn")?.addEventListener("click", () => {
 
     goToWizardStep(4); // → confirmed
 
-    // Animate the loc-map-card entrance
-    setTimeout(() => {
-      const card = document.getElementById("locMapCard");
-      if (card) {
-        card.classList.remove("is-card-visible");
-        void card.offsetWidth; // force reflow
+    // Trigger loc-map-card entrance animation
+    const card = document.getElementById("locMapCard");
+    if (card) {
+      card.classList.remove("is-card-visible");
+      requestAnimationFrame(() => requestAnimationFrame(() => {
         card.classList.add("is-card-visible");
-      }
-    }, 300);
+      }));
+    }
   }, 900);
 });
 
@@ -1211,6 +1210,8 @@ document.getElementById("wizardRestart")?.addEventListener("click", () => {
   document.getElementById("paymentDoneBtn")?.classList.remove("is-visible");
   const amountEl = document.getElementById("paymentAmountDisplay");
   if (amountEl) amountEl.textContent = "INR 0";
+  // Reset map card animation
+  document.getElementById("locMapCard")?.classList.remove("is-card-visible");
   goToWizardStep(0);
   fetchLocationsAndRender();
 });
