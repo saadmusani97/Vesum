@@ -1,0 +1,17 @@
+# Dependencies
+node_modules/
+
+# Environment — never commit secrets
+.env
+.env.local
+.env.*.local
+
+# Vite build output
+dist/
+
+# macOS
+.DS_Store
+
+# Editor
+.vscode/
+*.log

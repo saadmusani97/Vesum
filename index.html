@@ -1,0 +1,820 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>VESUM | Smart Parking Access</title>
+    <link
+      rel="stylesheet"
+      href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+      integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY="
+      crossorigin=""
+    />
+    <link rel="stylesheet" href="./styles.css" />
+  </head>
+  <body>
+
+    <!-- ── Navbar ─────────────────────────────────────────────── -->
+    <nav class="navbar" id="navbar" aria-label="Primary navigation">
+      <a class="nav-brand" href="#" data-page="home">VESUM</a>
+      <ul class="nav-pill-list" id="navPillList" role="list">
+        <li><a class="nav-pill-item" href="#" data-page="home">Home</a></li>
+        <li><a class="nav-pill-item" href="#" data-page="map">Map</a></li>
+        <li><a class="nav-pill-item" href="#" data-page="booking">Booking</a></li>
+        <li><a class="nav-pill-item" href="#" data-page="research">Research</a></li>
+        <li><a class="nav-pill-item" href="#" data-page="dashboards">Dashboards</a></li>
+        <span class="nav-pill-cursor" id="navPillCursor" aria-hidden="true"></span>
+      </ul>
+      <a class="nav-cta magnetic" href="#" data-page="booking">Launch App</a>
+    </nav>
+
+    <!-- ── Pages ──────────────────────────────────────────────── -->
+    <div id="appRoot">
+
+      <!-- PAGE: Home -->
+      <div class="page" id="page-home" data-page="home">
+        <section class="sequence-hero" id="sequenceHero" aria-label="VESUM smart parking intro">
+          <div class="hero-sticky">
+            <canvas id="heroCanvas" aria-hidden="true"></canvas>
+            <div class="vignette" aria-hidden="true"></div>
+            <div class="scroll-meter" aria-hidden="true"><span></span></div>
+          </div>
+        </section>
+
+        <section class="section platform-section next-section" id="platform">
+          <div class="post-hero-showcase">
+            <div class="post-hero-copy" data-parallax="0.04">
+              <p class="eyebrow reveal">VESUM Access Cloud</p>
+              <h1 class="reveal pixel-title shutter-text" data-shutter="Smart Parking Access for Modern Cities">Smart Parking Access for Modern Cities</h1>
+              <p class="hero-subtext reveal">Book verified parking in seconds</p>
+              <div class="hero-actions reveal">
+                <a class="button primary magnetic" href="#" data-page="map">Find Parking</a>
+                <a class="button secondary magnetic" href="#" data-page="dashboards">Register Society</a>
+              </div>
+            </div>
+            <div class="parking-visual reveal" data-parallax="0.025">
+              <img src="./assets/car-preview.jpg" alt="Smart city parking with VESUM" />
+            </div>
+          </div>
+          <div class="section-heading section-heading--full reveal">
+            <div class="platform-showcase">
+              <div class="platform-copy">
+                <p class="section-kicker">Realtime city layer</p>
+                <h2>Parking, gate access, and <span class="platform-accent">society operations</span> — designed as one product.</h2>
+                <p>VESUM gives drivers <strong>verified inventory</strong> while societies, guards, and admins get synchronized tools for approvals, bookings, and payments.</p>
+                <div class="platform-tags">
+                  <span class="platform-tag">
+                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><rect x="3" y="3" width="18" height="18" rx="3"/><path d="M9 12h6M12 9v6"/></svg>
+                    Parking
+                  </span>
+                  <span class="platform-tag">
+                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="12" cy="10" r="3"/><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z"/></svg>
+                    Gate Access
+                  </span>
+                  <span class="platform-tag">
+                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+                    Society Ops
+                  </span>
+                </div>
+              </div>
+              <div class="platform-image reveal">
+                <div class="platform-image-glow"></div>
+                <img src="./assets/parking-lot.png" alt="Smart parking lot illustration" />
+              </div>
+            </div>
+          </div>
+          <div class="stats-grid stagger">
+            <article class="stat-card glow-card">
+              <strong data-counter="128">0</strong>
+              <span>verified societies</span>
+            </article>
+            <article class="stat-card glow-card">
+              <strong data-counter="42">0</strong>
+              <span>sec average booking</span>
+            </article>
+            <article class="stat-card glow-card">
+              <strong data-counter="96">0</strong>
+              <span>% entry approval rate</span>
+            </article>
+          </div>
+          <div class="feature-grid stagger">
+            <article class="feature-card glow-card">
+              <span class="icon-ring"></span>
+              <h3>Verified spaces</h3>
+              <p>Only approved society inventory is surfaced, with live slots and clear rules.</p>
+            </article>
+            <article class="feature-card glow-card">
+              <span class="icon-ring"></span>
+              <h3>Access-first booking</h3>
+              <p>Every booking is mapped to vehicle, OTP, guard checkpoint, and resident policy.</p>
+            </article>
+            <article class="feature-card glow-card">
+              <span class="icon-ring"></span>
+              <h3>Operations cockpit</h3>
+              <p>Admins monitor traffic, approvals, payments, and exceptions from a single view.</p>
+            </article>
+          </div>
+
+          <!-- Page nav cards -->
+          <div class="page-nav-grid stagger">
+            <a class="page-nav-card glow-card" href="#" data-page="map">
+              <span class="page-nav-icon"><img src="./assets/icon-map.png" alt="Live Map" /></span>
+              <h3>Live Map</h3>
+              <p>Find verified parking near you with real-time GPS markers.</p>
+              <span class="page-nav-arrow">→</span>
+            </a>
+            <a class="page-nav-card glow-card" href="#" data-page="booking">
+              <span class="page-nav-icon"><img src="./assets/icon-booking.png" alt="Book a Slot" /></span>
+              <h3>Book a Slot</h3>
+              <p>Detect location, verify OTP, and confirm entry in seconds.</p>
+              <span class="page-nav-arrow">→</span>
+            </a>
+            <a class="page-nav-card glow-card" href="#" data-page="research">
+              <span class="page-nav-icon"><img src="./assets/icon-research.png" alt="Research" /></span>
+              <h3>Research</h3>
+              <p>Quantitative analysis from our user survey on parking habits.</p>
+              <span class="page-nav-arrow">→</span>
+            </a>
+            <a class="page-nav-card glow-card" href="#" data-page="dashboards">
+              <span class="page-nav-icon"><img src="./assets/icon-dashboard.png" alt="Dashboards" /></span>
+              <h3>Dashboards</h3>
+              <p>Admin, society, and security panels for live operations.</p>
+              <span class="page-nav-arrow">→</span>
+            </a>
+          </div>
+        </section>
+      </div>
+
+      <!-- PAGE: Map -->
+      <div class="page" id="page-map" data-page="map">
+        <section class="section map-section page-section">
+          <div class="page-header reveal">
+            <p class="section-kicker">Live map</p>
+            <h2 class="shutter-text" data-shutter="Find society parking with a cinematic city map.">Find society parking with a <span class="text-glow">cinematic city map</span>.</h2>
+            <p class="page-header-sub">Animated markers pulse over available societies and expand into glass popups.</p>
+          </div>
+          <div class="map-hero-image reveal">
+            <img src="./assets/findparking.png" alt="Find society parking" />
+          </div>
+          <div class="map-shell reveal">
+            <div id="vesumMap" aria-label="Live parking map"></div>
+            <div class="map-controls">
+              <button class="map-control active" id="followLocation" type="button">Follow GPS</button>
+              <button class="map-control" id="locateNow" type="button">Locate me</button>
+            </div>
+            <aside class="map-popup" id="mapPopup">
+              <small id="mapStatus">GPS ready</small>
+              <h3>Shanti Vihar CHS</h3>
+              <p>18 slots open · 320m away · INR 120/hour · guard verified</p>
+              <button class="button primary magnetic" type="button" id="mapReserveBtn">Reserve slot</button>
+            </aside>
+          </div>
+        </section>
+      </div>
+
+      <!-- PAGE: Booking -->
+      <div class="page" id="page-booking" data-page="booking">
+        <section class="section booking-section page-section">
+          <div class="page-header reveal">
+            <p class="section-kicker">Booking flow</p>
+            <h2 class="shutter-text" data-shutter="Book, verify OTP, and confirm entry without friction.">Book, verify OTP, and confirm entry without friction.</h2>
+            <p class="page-header-sub">Each state transitions with clear feedback, so users always know what happens next.</p>
+          </div>
+
+          <div class="wizard-wrap reveal" id="onboardingShell">
+            <div class="wizard-progress" aria-label="Onboarding steps">
+              <div class="wizard-step-item is-active" data-wstep="0">
+                <div class="wizard-step-dot"><span>1</span></div>
+                <p>Location</p>
+              </div>
+              <div class="wizard-connector"></div>
+              <div class="wizard-step-item" data-wstep="1">
+                <div class="wizard-step-dot"><span>2</span></div>
+                <p>Mobile</p>
+              </div>
+              <div class="wizard-connector"></div>
+              <div class="wizard-step-item" data-wstep="2">
+                <div class="wizard-step-dot"><span>3</span></div>
+                <p>OTP</p>
+              </div>
+              <div class="wizard-connector"></div>
+              <div class="wizard-step-item" data-wstep="3">
+                <div class="wizard-step-dot"><span>4</span></div>
+                <p>Payment</p>
+              </div>
+              <div class="wizard-connector"></div>
+              <div class="wizard-step-item" data-wstep="4">
+                <div class="wizard-step-dot"><span>✓</span></div>
+                <p>Confirmed</p>
+              </div>
+            </div>
+
+            <div class="wizard-body">
+              <div class="wizard-panel is-active" id="onboardStepLocation">
+                <div class="wizard-panel-icon">
+                  <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="10" r="3"/><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z"/></svg>
+                </div>
+                <h3 class="wizard-panel-title">Find nearby parking</h3>
+                <p class="wizard-panel-copy">Allow location access to discover verified societies around you.</p>
+                <div class="wizard-actions">
+                  <button class="button primary magnetic" id="onboardDetectLocation" type="button">Detect My Location</button>
+                </div>
+                <div class="onboard-list" id="onboardLocationList"></div>
+              </div>
+
+              <div class="wizard-panel" id="onboardStepPhone">
+                <div class="wizard-panel-icon">
+                  <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="2" width="14" height="20" rx="3"/><line x1="12" y1="18" x2="12.01" y2="18"/></svg>
+                </div>
+                <h3 class="wizard-panel-title">Enter your mobile number</h3>
+                <p class="wizard-panel-copy">We'll send a one-time password to verify your identity.</p>
+                <p class="wizard-selected-location" id="onboardPhoneHint"></p>
+                <div class="wizard-field-row">
+                  <input class="wizard-input" id="onboardPhoneInput" type="tel" inputmode="tel" placeholder="+919876543210" autocomplete="tel" />
+                  <button class="button primary magnetic" id="onboardSendOtp" type="button">Send OTP</button>
+                </div>
+              </div>
+
+              <div class="wizard-panel" id="onboardStepOtp">
+                <div class="wizard-panel-icon">
+                  <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+                </div>
+                <h3 class="wizard-panel-title">Enter the OTP</h3>
+                <p class="wizard-panel-copy">Use the 6-digit code sent to your mobile number.</p>
+                <div class="otp-boxes" id="otpBoxes">
+                  <input class="otp-box" maxlength="1" inputmode="numeric" type="text" />
+                  <input class="otp-box" maxlength="1" inputmode="numeric" type="text" />
+                  <input class="otp-box" maxlength="1" inputmode="numeric" type="text" />
+                  <input class="otp-box" maxlength="1" inputmode="numeric" type="text" />
+                  <input class="otp-box" maxlength="1" inputmode="numeric" type="text" />
+                  <input class="otp-box" maxlength="1" inputmode="numeric" type="text" />
+                </div>
+                <input type="hidden" id="onboardOtpInput" />
+                <div class="wizard-actions">
+                  <button class="button primary magnetic" id="onboardVerifyOtp" type="button">Verify OTP</button>
+                </div>
+                <p class="wizard-hint" id="onboardOtpHint"></p>
+              </div>
+
+              <div class="wizard-panel" id="onboardStepPayment">
+                <div class="wizard-panel-icon">
+                  <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="5" width="20" height="14" rx="3"/><path d="M2 10h20"/></svg>
+                </div>
+                <h3 class="wizard-panel-title">Pay to confirm booking</h3>
+                <p class="wizard-panel-copy">Scan the QR below. Minimum <b id="payMinAmount">INR 1</b> required to reserve your slot.</p>
+
+                <div class="payment-shell">
+
+                  <!-- Amount counter — shown first, animates in -->
+                  <div class="payment-amount-row" id="paymentAmountRow">
+                    <span class="payment-amount-label">Amount due</span>
+                    <span class="payment-amount-value" id="paymentAmountDisplay">INR 0</span>
+                  </div>
+
+                  <!-- QR Code block -->
+                  <div class="payment-qr-wrap" id="paymentQrWrap">
+                    <div class="payment-qr" id="paymentQr" aria-label="UPI QR code">
+                      <img src="./assets/upiqr.jpg" alt="Scan to pay — MOHAMMAD SAAD SAJID MUSANI" class="payment-qr-img" />
+                      <div class="payment-qr-scan-line"></div>
+                    </div>
+                    <p class="payment-upi-id">MOHAMMAD SAAD SAJID MUSANI</p>
+                    <p class="payment-qr-hint">Open any UPI app and scan</p>
+                  </div>
+
+                  <!-- Done button -->
+                  <button class="button primary magnetic payment-done-btn" id="paymentDoneBtn" type="button">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                    I've Paid
+                  </button>
+
+                  <p class="wizard-hint" id="paymentHint"></p>
+
+                </div>
+              </div>
+
+              <div class="wizard-panel" id="onboardStepConfirmed">
+                <div class="success-ring">
+                  <div class="success-pulse"></div>
+                  <svg viewBox="0 0 52 52" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+                    <path d="M14 27l9 9 16-18" stroke="#46d9ff" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"/>
+                  </svg>
+                </div>
+                <h3 class="wizard-panel-title">Booking confirmed!</h3>
+                <p class="wizard-panel-copy">Guard desk, resident, and admin dashboard are now synchronized. Your slot is reserved.</p>
+                <div class="confirmed-details" id="confirmedDetails">
+                  <div class="confirmed-row"><span>Society</span><b id="confirmedSociety">—</b></div>
+                  <div class="confirmed-row"><span>Mobile</span><b id="confirmedPhone">—</b></div>
+                  <div class="confirmed-row"><span>Paid</span><b id="confirmedAmount">—</b></div>
+                  <div class="confirmed-row"><span>Status</span><b class="confirmed-live">● Live</b></div>
+                </div>
+                <div class="loc-map-card glow-card" id="locMapCard" role="button" tabindex="0" aria-label="View parking location on map">
+                  <div class="loc-map-collapsed">
+                    <div class="loc-map-top">
+                      <svg class="loc-map-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                        <polygon points="3 6 9 3 15 6 21 3 21 18 15 21 9 18 3 21"/>
+                        <line x1="9" x2="9" y1="3" y2="18"/>
+                        <line x1="15" x2="15" y1="6" y2="21"/>
+                      </svg>
+                      <div class="loc-map-live"><span class="loc-live-dot"></span><span>Live</span></div>
+                    </div>
+                    <div class="loc-map-bottom">
+                      <p class="loc-map-name" id="locMapName">Selected Society</p>
+                      <div class="loc-map-underline"></div>
+                    </div>
+                  </div>
+                  <div class="loc-map-expanded" id="locMapExpanded" aria-hidden="true">
+                    <div class="loc-map-bg"></div>
+                    <svg class="loc-map-roads" viewBox="0 0 360 280" preserveAspectRatio="none" aria-hidden="true">
+                      <line x1="0" y1="98" x2="360" y2="98" class="loc-road-main" stroke-width="4"/>
+                      <line x1="0" y1="182" x2="360" y2="182" class="loc-road-main" stroke-width="4"/>
+                      <line x1="108" y1="0" x2="108" y2="280" class="loc-road-main" stroke-width="3"/>
+                      <line x1="252" y1="0" x2="252" y2="280" class="loc-road-main" stroke-width="3"/>
+                      <line x1="0" y1="56" x2="360" y2="56" class="loc-road-sec"/>
+                      <line x1="0" y1="140" x2="360" y2="140" class="loc-road-sec"/>
+                      <line x1="0" y1="224" x2="360" y2="224" class="loc-road-sec"/>
+                      <line x1="54" y1="0" x2="54" y2="280" class="loc-road-sec"/>
+                      <line x1="162" y1="0" x2="162" y2="280" class="loc-road-sec"/>
+                      <line x1="198" y1="0" x2="198" y2="280" class="loc-road-sec"/>
+                      <line x1="306" y1="0" x2="306" y2="280" class="loc-road-sec"/>
+                    </svg>
+                    <div class="loc-building" style="top:40%;left:10%;width:15%;height:20%"></div>
+                    <div class="loc-building" style="top:15%;left:35%;width:12%;height:15%"></div>
+                    <div class="loc-building" style="top:70%;left:75%;width:18%;height:18%"></div>
+                    <div class="loc-building" style="top:20%;right:10%;width:10%;height:25%"></div>
+                    <div class="loc-building" style="top:55%;left:5%;width:8%;height:12%"></div>
+                    <div class="loc-building" style="top:8%;left:75%;width:14%;height:10%"></div>
+                    <div class="loc-map-pin">
+                      <svg width="32" height="32" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                        <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z" fill="#34d399"/>
+                        <circle cx="12" cy="9" r="2.5" fill="#020407"/>
+                      </svg>
+                    </div>
+                    <div class="loc-map-fade"></div>
+                    <div class="loc-map-info">
+                      <p class="loc-map-info-name" id="locMapInfoName">Selected Society</p>
+                      <p class="loc-map-info-coords" id="locMapCoords">Mumbai, Maharashtra</p>
+                    </div>
+                  </div>
+                  <p class="loc-map-hint">Click to expand</p>
+                </div>
+                <div class="wizard-actions">
+                  <button class="button secondary magnetic" id="wizardRestart" type="button">Start new booking</button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+      </div>
+
+      <!-- PAGE: Research -->
+      <div class="page" id="page-research" data-page="research">
+        <section class="section survey-section page-section">
+          <div class="page-header reveal">
+            <p class="section-kicker">Research</p>
+            <h2 class="shutter-text" data-shutter="Quantitative Analysis">Quantitative <span class="text-glow">Analysis</span></h2>
+            <p class="page-header-sub">Online survey conducted across 6 target users to understand real parking behaviour and pain points.</p>
+          </div>
+          <div class="survey-image-wrap reveal">
+            <img src="./assets/surveyimage.png" alt="Survey quantitative analysis" />
+          </div>
+          <div class="survey-charts stagger">
+            <article class="survey-card glow-card">
+              <div class="survey-chart-wrap">
+                <canvas id="chartCompare" width="140" height="140" aria-label="Compare parking charges chart"></canvas>
+              </div>
+              <p class="survey-question">Do you compare the car parking charges?</p>
+              <div class="survey-legend">
+                <span class="legend-dot yes"></span><span>Yes — 70%</span>
+                <span class="legend-dot no"></span><span>No — 30%</span>
+              </div>
+            </article>
+            <article class="survey-card glow-card">
+              <div class="survey-chart-wrap">
+                <canvas id="chartSpot" width="140" height="140" aria-label="Specific spot chart"></canvas>
+              </div>
+              <p class="survey-question">Do you use a specific spot for parking your car?</p>
+              <div class="survey-legend">
+                <span class="legend-dot yes"></span><span>Yes — 18%</span>
+                <span class="legend-dot no"></span><span>No — 82%</span>
+              </div>
+            </article>
+            <article class="survey-card glow-card">
+              <div class="survey-chart-wrap">
+                <canvas id="chartOnline" width="140" height="140" aria-label="Online payment chart"></canvas>
+              </div>
+              <p class="survey-question">Do you pay parking charges online?</p>
+              <div class="survey-legend">
+                <span class="legend-dot yes"></span><span>Yes — 10%</span>
+                <span class="legend-dot no"></span><span>No — 90%</span>
+              </div>
+            </article>
+          </div>
+        </section>
+      </div>
+
+      <!-- PAGE: Dashboards -->
+      <div class="page" id="page-dashboards" data-page="dashboards">
+        <section class="section dashboard-section page-section">
+
+          <div class="page-header reveal">
+            <p class="section-kicker">Dashboards</p>
+            <h2 class="shutter-text" data-shutter="Admin, society, and security panels built for live operations.">Admin, society, and security panels built for <span class="text-glow">live operations</span>.</h2>
+            <p class="page-header-sub">Glass cards, animated stats, row states, and skeleton loading keep dense tools polished.</p>
+          </div>
+
+          <!-- ── Dashboard Shell ── -->
+          <div class="db-shell">
+
+            <!-- Sidebar -->
+            <aside class="db-sidebar">
+              <div class="db-sidebar-brand">
+                <span class="db-brand-dot"></span>
+                <span>VESUM</span>
+              </div>
+              <nav class="db-nav">
+                <a class="db-nav-item is-active" href="#" data-dbtab="overview">
+                  <img src="./assets/icon-dashboard.png" width="16" height="16" alt="" />
+                  Overview
+                </a>
+                <a class="db-nav-item" href="#" data-dbtab="bookings">
+                  <img src="./assets/icon-booking.png" width="16" height="16" alt="" />
+                  Bookings
+                </a>
+                <a class="db-nav-item" href="#" data-dbtab="vehicles">
+                  <img src="./assets/bmw.png" width="16" height="16" alt="" style="object-fit:contain;" />
+                  Vehicles
+                </a>
+                <a class="db-nav-item" href="#" data-dbtab="security">
+                  <img src="./assets/icon-otp.png" width="16" height="16" alt="" />
+                  Security
+                </a>
+                <a class="db-nav-item" href="#" data-dbtab="revenue">
+                  <img src="./assets/icon-revenue.png" width="16" height="16" alt="" />
+                  Revenue
+                </a>
+              </nav>
+              <div class="db-sidebar-footer">
+                <div class="db-user">
+                  <div class="db-user-avatar">SA</div>
+                  <div>
+                    <p class="db-user-name">Saad Admin</p>
+                    <p class="db-user-role">Super Admin</p>
+                  </div>
+                </div>
+              </div>
+            </aside>
+
+            <!-- Main content -->
+            <div class="db-main">
+
+              <!-- Topbar -->
+              <header class="db-topbar">
+                <div class="db-topbar-left">
+                  <h3 class="db-topbar-title">Overview</h3>
+                  <span class="db-topbar-date" id="dbDate"></span>
+                </div>
+                <div class="db-topbar-right">
+                  <div class="db-search">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+                    <input type="text" placeholder="Search…" />
+                  </div>
+                  <button class="db-notif" aria-label="Notifications">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
+                    <span class="db-notif-badge">3</span>
+                  </button>
+                </div>
+              </header>
+
+              <!-- Stats row -->
+              <div class="db-stats">
+                <article class="db-stat-card glow-card">
+                  <div class="db-stat-icon">
+                    <img src="./assets/icon-total-bookings.png" alt="Total Bookings" />
+                  </div>
+                  <div class="db-stat-body">
+                    <p class="db-stat-label">Total Bookings</p>
+                    <strong class="db-stat-num" data-counter="2840">0</strong>
+                    <span class="db-stat-growth up">↑ 18.4% this week</span>
+                  </div>
+                </article>
+                <article class="db-stat-card glow-card">
+                  <div class="db-stat-icon">
+                    <img src="./assets/icon-revenue.png" alt="Revenue" />
+                  </div>
+                  <div class="db-stat-body">
+                    <p class="db-stat-label">Revenue (INR)</p>
+                    <strong class="db-stat-num" data-counter="94200">0</strong>
+                    <span class="db-stat-growth up">↑ 12.1% this week</span>
+                  </div>
+                </article>
+                <article class="db-stat-card glow-card">
+                  <div class="db-stat-icon">
+                    <img src="./assets/icon-active-societies.png" alt="Active Societies" />
+                  </div>
+                  <div class="db-stat-body">
+                    <p class="db-stat-label">Active Societies</p>
+                    <strong class="db-stat-num" data-counter="128">0</strong>
+                    <span class="db-stat-growth up">↑ 4 new this week</span>
+                  </div>
+                </article>
+                <article class="db-stat-card glow-card">
+                  <div class="db-stat-icon">
+                    <img src="./assets/icon-otp.png" alt="OTP Approval Rate" />
+                  </div>
+                  <div class="db-stat-body">
+                    <p class="db-stat-label">OTP Approval Rate</p>
+                    <strong class="db-stat-num" data-counter="99">0</strong><span class="db-stat-unit">%</span>
+                    <span class="db-stat-growth up">↑ 0.3% this week</span>
+                  </div>
+                </article>
+              </div>
+
+              <!-- Middle row: bookings + quick actions -->
+              <div class="db-mid-row">
+
+                <!-- Recent bookings -->
+                <div class="db-card db-bookings glow-card">
+                  <div class="db-card-header">
+                    <h4>Recent Bookings</h4>
+                    <span class="db-badge db-badge-live">● Live</span>
+                  </div>
+                  <div class="db-table">
+                    <div class="db-table-head">
+                      <span>Society</span><span>Slot</span><span>Time</span><span>Status</span>
+                    </div>
+                    <div class="db-table-row stagger-row">
+                      <span>Shanti Vihar CHS</span><span>B2-04</span><span>6:30 PM</span>
+                      <span class="db-status confirmed">Confirmed</span>
+                    </div>
+                    <div class="db-table-row stagger-row">
+                      <span>Gokul Residency</span><span>A1-11</span><span>5:15 PM</span>
+                      <span class="db-status active">Active</span>
+                    </div>
+                    <div class="db-table-row stagger-row">
+                      <span>Sai Darshan Heights</span><span>C3-07</span><span>4:00 PM</span>
+                      <span class="db-status completed">Completed</span>
+                    </div>
+                    <div class="db-table-row stagger-row">
+                      <span>Lakeview CHS</span><span>B1-02</span><span>3:45 PM</span>
+                      <span class="db-status completed">Completed</span>
+                    </div>
+                    <div class="db-table-row stagger-row">
+                      <span>Palm Grove Apts</span><span>A2-09</span><span>2:30 PM</span>
+                      <span class="db-status confirmed">Confirmed</span>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Quick actions -->
+                <div class="db-quick-actions">
+                  <div class="db-card-header" style="margin-bottom:16px;">
+                    <h4>Quick Actions</h4>
+                  </div>
+                  <div class="db-actions-grid">
+                    <button class="db-action-card glow-card" type="button">
+                      <div class="db-action-icon">
+                        <!-- Booking / van icon -->
+                        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="1" y="3" width="15" height="13" rx="2"/><path d="M16 8h4l3 5v3h-7V8z"/><circle cx="5.5" cy="18.5" r="2.5"/><circle cx="18.5" cy="18.5" r="2.5"/></svg>
+                      </div>
+                      <span>New Booking</span>
+                    </button>
+                    <button class="db-action-card glow-card" type="button">
+                      <div class="db-action-icon">
+                        <!-- Society / building icon -->
+                        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+                      </div>
+                      <span>Add Society</span>
+                    </button>
+                    <button class="db-action-card glow-card" type="button">
+                      <div class="db-action-icon">
+                        <!-- Report / wallet icon -->
+                        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="5" width="20" height="14" rx="3"/><path d="M16 12a2 2 0 0 1-4 0 2 2 0 0 1 4 0z"/><path d="M22 10H16M22 14H16"/></svg>
+                      </div>
+                      <span>Export Report</span>
+                    </button>
+                    <button class="db-action-card glow-card" type="button">
+                      <div class="db-action-icon">
+                        <!-- Live / EV charging icon -->
+                        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="2" width="14" height="20" rx="3"/><path d="M9 7h6M9 12h4"/><path d="M13 12l-2 5h4l-2 5" stroke-width="1.4"/></svg>
+                      </div>
+                      <span>Live Monitor</span>
+                    </button>
+                  </div>
+                </div>
+
+              </div>
+
+            </div><!-- /db-main -->
+          </div><!-- /db-shell -->
+
+          <!-- ── Bottom Panels (outside shell, full width) ── -->
+          <div class="dash-bottom">
+
+            <!-- Left: stat panels -->
+            <div class="dash-panels">
+              <article class="dash-panel">
+                <div class="dash-panel-header">
+                  <span class="dash-panel-label">Society Panel</span>
+                  <strong class="dash-panel-num" data-counter="72">0</strong>
+                </div>
+                <div class="dash-panel-divider"></div>
+                <div class="dash-panel-stats">
+                  <div class="dash-stat"><span>Guest slots</span><b>24</b></div>
+                  <div class="dash-stat"><span>Resident holds</span><b>31</b></div>
+                  <div class="dash-stat"><span>Pending</span><b class="dash-warn">07</b></div>
+                </div>
+              </article>
+              <article class="dash-panel">
+                <div class="dash-panel-header">
+                  <span class="dash-panel-label">Security Panel</span>
+                  <strong class="dash-panel-num" data-counter="186">0</strong>
+                </div>
+                <div class="dash-panel-divider"></div>
+                <div class="dash-panel-stats">
+                  <div class="dash-stat"><span>Gate scans</span><b class="dash-live">● Live</b></div>
+                  <div class="dash-stat"><span>OTP checks</span><b>99%</b></div>
+                  <div class="dash-stat"><span>Active alerts</span><b class="dash-warn">02</b></div>
+                </div>
+              </article>
+            </div>
+
+            <!-- Right: vehicles -->
+            <article class="dash-vehicles" id="dbVehiclesPreview" role="button" tabindex="0" aria-label="View my vehicles">
+              <div class="dash-vehicles-header">
+                <span class="dash-panel-label">My Vehicles</span>
+                <span class="dash-vehicles-badge">3 registered</span>
+              </div>
+              <div class="dash-vehicles-row">
+                <div class="dash-vcard">
+                  <div class="dash-vcard-img">
+                    <img src="./assets/bmw.png" alt="BMW M4" />
+                  </div>
+                  <p class="dash-vcard-name">BMW M4</p>
+                  <span class="dash-vstatus dash-vstatus--parked">Parked</span>
+                </div>
+                <div class="dash-vcard">
+                  <div class="dash-vcard-img">
+                    <img src="./assets/supra.png" alt="Supra MK4" />
+                  </div>
+                  <p class="dash-vcard-name">Supra MK4</p>
+                  <span class="dash-vstatus dash-vstatus--idle">Idle</span>
+                </div>
+                <div class="dash-vcard">
+                  <div class="dash-vcard-img">
+                    <img src="./assets/mercedes.png" alt="Mercedes E" />
+                  </div>
+                  <p class="dash-vcard-name">Mercedes E</p>
+                  <span class="dash-vstatus dash-vstatus--reserved">Reserved</span>
+                </div>
+              </div>
+              <div class="dash-vehicles-cta">
+                <span>View all vehicles</span>
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+              </div>
+            </article>
+
+          </div><!-- /dash-bottom -->
+        </section>
+      </div>
+
+    </div><!-- /appRoot -->
+
+    <!-- ── Vehicles overlay — lives directly in body so position:fixed works correctly ── -->
+    <div class="db-vehicles-page" id="dbVehiclesPage" aria-hidden="true">
+      <div class="db-vpage-header">
+        <button class="db-vpage-back" id="dbVehiclesBack" type="button">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
+          Back to Overview
+        </button>
+        <h3>My Vehicles</h3>
+        <span class="db-badge db-badge-live">● 1 Active</span>
+      </div>
+
+      <div class="db-vpage-grid" id="dbVehicleGrid">
+
+        <!-- BMW -->
+        <article class="db-vcard glow-card" data-vid="bmw">
+          <div class="db-vcard-img-wrap">
+            <img src="./assets/bmw.png" alt="BMW M4" class="db-vcard-img" />
+            <span class="db-status active db-vcard-status">● Parked</span>
+          </div>
+          <div class="db-vcard-body">
+            <div class="db-vcard-top">
+              <div>
+                <h4 class="db-vcard-name">BMW M4 Competition</h4>
+                <p class="db-vcard-plate">MH 02 AB 1234</p>
+              </div>
+              <div class="db-vcard-price">
+                <span>INR 120</span>
+                <small>/hr</small>
+              </div>
+            </div>
+            <div class="db-vcard-rows">
+              <div class="db-vcard-row">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
+                <span>Shanti Vihar CHS · Slot B2-04</span>
+              </div>
+              <div class="db-vcard-row">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+                <span>Since 6:30 PM · <b class="db-vcard-timer" data-start="18:30">1h 12m</b></span>
+              </div>
+              <div class="db-vcard-row">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+                <span>Total: <b>INR 144</b> so far</span>
+              </div>
+            </div>
+            <div class="db-vcard-actions">
+              <button class="button primary magnetic" type="button" style="min-height:38px;font-size:0.82rem;padding:0 16px;">Extend Parking</button>
+              <button class="button secondary magnetic" type="button" style="min-height:38px;font-size:0.82rem;padding:0 16px;">Navigate</button>
+            </div>
+          </div>
+        </article>
+
+        <!-- Supra -->
+        <article class="db-vcard glow-card" data-vid="supra">
+          <div class="db-vcard-img-wrap">
+            <img src="./assets/supra.png" alt="Toyota Supra" class="db-vcard-img" />
+            <span class="db-status completed db-vcard-status">● Idle</span>
+          </div>
+          <div class="db-vcard-body">
+            <div class="db-vcard-top">
+              <div>
+                <h4 class="db-vcard-name">Toyota Supra MK4</h4>
+                <p class="db-vcard-plate">MH 02 CD 5678</p>
+              </div>
+              <div class="db-vcard-price">
+                <span>—</span>
+                <small>not parked</small>
+              </div>
+            </div>
+            <div class="db-vcard-rows">
+              <div class="db-vcard-row">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
+                <span>Last parked: Gokul Residency · A1-11</span>
+              </div>
+              <div class="db-vcard-row">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+                <span>Last session: 2h 30m · Yesterday</span>
+              </div>
+              <div class="db-vcard-row">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+                <span>Last charge: <b>INR 237</b></span>
+              </div>
+            </div>
+            <div class="db-vcard-actions">
+              <button class="button primary magnetic" type="button" style="min-height:38px;font-size:0.82rem;padding:0 16px;" data-page="booking">Book Parking</button>
+              <button class="button secondary magnetic" type="button" style="min-height:38px;font-size:0.82rem;padding:0 16px;">History</button>
+            </div>
+          </div>
+        </article>
+
+        <!-- Mercedes -->
+        <article class="db-vcard glow-card" data-vid="mercedes">
+          <div class="db-vcard-img-wrap">
+            <img src="./assets/mercedes.png" alt="Mercedes" class="db-vcard-img" />
+            <span class="db-status confirmed db-vcard-status">● Reserved</span>
+          </div>
+          <div class="db-vcard-body">
+            <div class="db-vcard-top">
+              <div>
+                <h4 class="db-vcard-name">Mercedes-Benz E-Class</h4>
+                <p class="db-vcard-plate">MH 02 EF 9012</p>
+              </div>
+              <div class="db-vcard-price">
+                <span>INR 140</span>
+                <small>/hr</small>
+              </div>
+            </div>
+            <div class="db-vcard-rows">
+              <div class="db-vcard-row">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
+                <span>Sai Darshan Heights · C3-07</span>
+              </div>
+              <div class="db-vcard-row">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+                <span>Reserved for 7:00 PM · Tonight</span>
+              </div>
+              <div class="db-vcard-row">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+                <span>Estimated: <b>INR 280</b></span>
+              </div>
+            </div>
+            <div class="db-vcard-actions">
+              <button class="button primary magnetic" type="button" style="min-height:38px;font-size:0.82rem;padding:0 16px;">Modify Booking</button>
+              <button class="button secondary magnetic" type="button" style="min-height:38px;font-size:0.82rem;padding:0 16px;">Cancel</button>
+            </div>
+          </div>
+        </article>
+
+      </div>
+    </div><!-- /db-vehicles-page -->
+
+    <script
+      src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
+      integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo="
+      crossorigin=""
+    ></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"></script>
+    <script src="./script.js"></script>
+  </body>
+</html>

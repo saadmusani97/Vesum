@@ -1,0 +1,21 @@
+{
+  "name": "vesum-webapp",
+  "version": "1.0.0",
+  "private": true,
+  "description": "VESUM premium web app with onboarding + OTP APIs",
+  "main": "server.js",
+  "scripts": {
+    "dev": "node server.js",
+    "start": "node server.js"
+  },
+  "dependencies": {
+    "@supabase/supabase-js": "^2.105.1",
+    "better-sqlite3": "^12.9.0",
+    "dotenv": "^16.4.5",
+    "express": "^4.19.2",
+    "twilio": "^5.4.2"
+  },
+  "devDependencies": {
+    "vite": "^8.0.10"
+  }
+}
