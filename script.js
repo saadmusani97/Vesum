@@ -1431,47 +1431,17 @@ updateNavbar();
 // ── Location Map Card — tilt only, click opens modal ─────────────
 (function initLocMapCard() {
   const card = document.getElementById("locMapCard");
-  if (!card) return;
-
-  // Spring tilt
-  let rotX = 0, rotY = 0, velX = 0, velY = 0, tX = 0, tY = 0, raf = 0;
-  function spring() {
-    velX = velX * 0.68 + (tX - rotX) * 0.22;
-    velY = velY * 0.68 + (tY - rotY) * 0.22;
-    rotX += velX; rotY += velY;
-    card.style.transform = `rotateX(${rotX.toFixed(2)}deg) rotateY(${rotY.toFixed(2)}deg)`;
-    if (Math.abs(velX) > 0.01 || Math.abs(velY) > 0.01 || Math.abs(tX-rotX) > 0.01 || Math.abs(tY-rotY) > 0.01)
-      raf = requestAnimationFrame(spring);
-    else { card.style.transform = ""; raf = 0; }
-  }
-  card.addEventListener("pointermove", e => {
-    const r = card.getBoundingClientRect();
-    tY =  ((e.clientX - r.left - r.width/2)  / (r.width/2))  * 8;
-    tX = -((e.clientY - r.top  - r.height/2) / (r.height/2)) * 8;
-    if (!raf) raf = requestAnimationFrame(spring);
-  }, { passive: true });
-  card.addEventListener("pointerleave", () => {
-    tX = tY = 0;
-    if (!raf) raf = requestAnimationFrame(spring);
-  }, { passive: true });
-
-  // Click → open map modal
-  card.addEventListener("click", openMapModal);
-  card.addEventListener("keydown", e => {
-    if (e.key === "Enter" || e.key === " ") { e.preventDefault(); openMapModal(); }
-  });
-  // Expose globally for inline onclick fallback
-  window._openLocMapModal = openMapModal;
 
   function openMapModal() {
-    // Reset tilt
-    tX = tY = 0; rotX = rotY = velX = velY = 0;
-    card.style.transform = "";
+    if (card) { card.style.transform = ""; }
+    document.getElementById("locMapModal")?.remove();
 
-    const locName   = document.getElementById("locMapInfoName")?.textContent || document.getElementById("locMapName")?.textContent || "Selected Society";
-    const locCoords = document.getElementById("locMapCoords")?.textContent   || "Mumbai, Maharashtra";
+    const locName   = document.getElementById("locMapInfoName")?.textContent
+                   || document.getElementById("locMapName")?.textContent
+                   || "Selected Society";
+    const locCoords = document.getElementById("locMapCoords")?.textContent
+                   || "Mumbai, Maharashtra";
 
-    // Build modal
     const modal = document.createElement("div");
     modal.id = "locMapModal";
     modal.innerHTML = `
@@ -1515,30 +1485,23 @@ updateNavbar();
       </div>`;
     document.body.appendChild(modal);
 
-    // Animate in
     requestAnimationFrame(() => {
       modal.classList.add("lmm-open");
-      // Roads draw
       modal.querySelectorAll(".lmm-road-main, .lmm-road-sec").forEach((l, i) => {
-        const len = 500;
-        l.style.strokeDasharray  = len;
-        l.style.strokeDashoffset = len;
+        l.style.strokeDasharray  = "500";
+        l.style.strokeDashoffset = "500";
         setTimeout(() => {
           l.style.transition = `stroke-dashoffset ${0.7 + i * 0.05}s cubic-bezier(0.22,1,0.36,1)`;
           l.style.strokeDashoffset = "0";
         }, 150 + i * 40);
       });
-      // Buildings
       modal.querySelectorAll(".lmm-building").forEach((b, i) => {
         setTimeout(() => b.classList.add("lmm-in"), 300 + i * 70);
       });
-      // Pin
       setTimeout(() => modal.querySelector(".lmm-pin")?.classList.add("lmm-in"), 280);
-      // Info
       setTimeout(() => modal.querySelector(".lmm-info")?.classList.add("lmm-in"), 400);
     });
 
-    // Close handlers
     function close() {
       modal.classList.remove("lmm-open");
       modal.classList.add("lmm-out");
@@ -1550,6 +1513,37 @@ updateNavbar();
       if (e.key === "Escape") { close(); document.removeEventListener("keydown", esc); }
     });
   }
+
+  // Always expose globally — works even if card is null at load time
+  window._openLocMapModal = openMapModal;
+
+  if (!card) return;
+
+  // Spring tilt
+  let rotX = 0, rotY = 0, velX = 0, velY = 0, tX = 0, tY = 0, raf = 0;
+  function spring() {
+    velX = velX * 0.68 + (tX - rotX) * 0.22;
+    velY = velY * 0.68 + (tY - rotY) * 0.22;
+    rotX += velX; rotY += velY;
+    card.style.transform = `rotateX(${rotX.toFixed(2)}deg) rotateY(${rotY.toFixed(2)}deg)`;
+    if (Math.abs(velX) > 0.01 || Math.abs(velY) > 0.01 || Math.abs(tX-rotX) > 0.01 || Math.abs(tY-rotY) > 0.01)
+      raf = requestAnimationFrame(spring);
+    else { card.style.transform = ""; raf = 0; }
+  }
+  card.addEventListener("pointermove", e => {
+    const r = card.getBoundingClientRect();
+    tY =  ((e.clientX - r.left - r.width/2)  / (r.width/2))  * 8;
+    tX = -((e.clientY - r.top  - r.height/2) / (r.height/2)) * 8;
+    if (!raf) raf = requestAnimationFrame(spring);
+  }, { passive: true });
+  card.addEventListener("pointerleave", () => {
+    tX = tY = 0;
+    if (!raf) raf = requestAnimationFrame(spring);
+  }, { passive: true });
+  card.addEventListener("click", openMapModal);
+  card.addEventListener("keydown", e => {
+    if (e.key === "Enter" || e.key === " ") { e.preventDefault(); openMapModal(); }
+  });
 })();
 
 // ── Vehicles Sub-Page ────────────────────────────────────────────

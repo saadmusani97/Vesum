@@ -307,7 +307,7 @@
                   <div class="confirmed-row"><span>Paid</span><b id="confirmedAmount">—</b></div>
                   <div class="confirmed-row"><span>Status</span><b class="confirmed-live">● Live</b></div>
                 </div>
-                <div class="loc-map-card glow-card" id="locMapCard" role="button" tabindex="0" aria-label="View parking location on map" onclick="window._openLocMapModal&&window._openLocMapModal()">
+                <div class="loc-map-card glow-card" id="locMapCard" role="button" tabindex="0" aria-label="View parking location on map" style="pointer-events:auto;cursor:pointer" onclick="window._openLocMapModal?window._openLocMapModal():null" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();this.click()}"  >
                   <div class="loc-map-collapsed">
                     <div class="loc-map-top">
                       <svg class="loc-map-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
