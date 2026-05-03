@@ -63,6 +63,19 @@ function renderLoop() {
 }
 
 // ── Scroll ────────────────────────────────────────────────────────
+let sequenceFinished = false;
+
+function snapToPlatform() {
+  if (sequenceFinished) return;
+  sequenceFinished = true;
+
+  const platform = document.getElementById("platform");
+  if (!platform) return;
+
+  // Smooth scroll to platform section
+  platform.scrollIntoView({ behavior: "smooth", block: "start" });
+}
+
 function updateFromScroll() {
   raf = 0;
   if (sequenceSkipped) return;
@@ -82,6 +95,11 @@ function updateFromScroll() {
   root.style.setProperty("--hero-shift",       `${(progress * -28).toFixed(2)}px`);
   root.style.setProperty("--next-opacity",     nextOpacity.toFixed(4));
   root.style.setProperty("--next-shift",       `${((1 - nextOpacity) * 28).toFixed(2)}px`);
+
+  // When sequence completes, snap to platform section — skip the dead gap
+  if (progress >= 0.98 && !sequenceFinished) {
+    snapToPlatform();
+  }
 }
 
 function requestScrollUpdate() {
