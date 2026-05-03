@@ -1552,14 +1552,10 @@ updateNavbar();
 
 // ── Vehicles Sub-Page ────────────────────────────────────────────
 (function initVehiclesPage() {
-  const preview = document.getElementById("dbVehiclesPreview");
   const vpage   = document.getElementById("dbVehiclesPage");
   const backBtn = document.getElementById("dbVehiclesBack");
 
-  if (!preview || !vpage) {
-    console.warn("[Vehicles] Elements not found", { preview, vpage });
-    return;
-  }
+  if (!vpage) return;
 
   function openVehicles() {
     const cards = [...document.querySelectorAll(".db-vcard")];
@@ -1585,26 +1581,22 @@ updateNavbar();
     });
   }
 
-  // Attach directly on the element as well as via addEventListener
-  preview.onclick = openVehicles;
-  preview.addEventListener("click", openVehicles);
-  preview.addEventListener("keydown", (e) => {
-    if (e.key === "Enter" || e.key === " ") { e.preventDefault(); openVehicles(); }
+  // Use document-level delegation so it works regardless of when dashboards page shows
+  document.addEventListener("click", (e) => {
+    const preview = e.target.closest("#dbVehiclesPreview");
+    if (preview) { openVehicles(); return; }
+    const back = e.target.closest("#dbVehiclesBack");
+    if (back) { closeVehicles(); return; }
+    const pageBtn = e.target.closest("#dbVehiclesPage [data-page]");
+    if (pageBtn) {
+      e.preventDefault();
+      closeVehicles();
+      setTimeout(() => navigateTo(pageBtn.dataset.page), 200);
+    }
   });
-
-  backBtn?.addEventListener("click", closeVehicles);
-  backBtn && (backBtn.onclick = closeVehicles);
 
   document.addEventListener("keydown", (e) => {
     if (e.key === "Escape" && vpage.classList.contains("is-open")) closeVehicles();
-  });
-
-  vpage.addEventListener("click", (e) => {
-    const btn = e.target.closest("[data-page]");
-    if (!btn) return;
-    e.preventDefault();
-    closeVehicles();
-    setTimeout(() => navigateTo(btn.dataset.page), 200);
   });
 
   let timerInterval = null;
