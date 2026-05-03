@@ -1512,27 +1512,27 @@ updateNavbar();
   const preview = document.getElementById("dbVehiclesPreview");
   const vpage   = document.getElementById("dbVehiclesPage");
   const backBtn = document.getElementById("dbVehiclesBack");
-  const cards   = [...document.querySelectorAll(".db-vcard")];
 
   if (!preview || !vpage) return;
 
+  // Re-query cards each open so we always get current DOM
   function openVehicles() {
+    const cards = [...document.querySelectorAll(".db-vcard")];
     vpage.classList.add("is-open");
     vpage.removeAttribute("aria-hidden");
     document.body.style.overflow = "hidden";
 
-    // Stagger card entrance
     cards.forEach((card, i) => {
       card.classList.remove("is-visible");
       card.style.transitionDelay = `${i * 120}ms`;
       setTimeout(() => card.classList.add("is-visible"), 80 + i * 120);
     });
 
-    // Live timer update for BMW
     startVehicleTimer();
   }
 
   function closeVehicles() {
+    const cards = [...document.querySelectorAll(".db-vcard")];
     vpage.classList.remove("is-open");
     vpage.setAttribute("aria-hidden", "true");
     document.body.style.overflow = "";
@@ -1542,6 +1542,7 @@ updateNavbar();
     });
   }
 
+  // Use both click and pointerup to ensure it fires on all devices
   preview.addEventListener("click", openVehicles);
   preview.addEventListener("keydown", (e) => {
     if (e.key === "Enter" || e.key === " ") { e.preventDefault(); openVehicles(); }
@@ -1549,18 +1550,17 @@ updateNavbar();
 
   backBtn?.addEventListener("click", closeVehicles);
 
-  // Close on Escape
   document.addEventListener("keydown", (e) => {
     if (e.key === "Escape" && vpage.classList.contains("is-open")) closeVehicles();
   });
 
-  // "Book Parking" button inside vehicles page → go to booking page
-  vpage.querySelectorAll("[data-page]").forEach((btn) => {
-    btn.addEventListener("click", (e) => {
-      e.preventDefault();
-      closeVehicles();
-      setTimeout(() => navigateTo(btn.dataset.page), 200);
-    });
+  // "Book Parking" → navigate to booking
+  vpage.addEventListener("click", (e) => {
+    const btn = e.target.closest("[data-page]");
+    if (!btn) return;
+    e.preventDefault();
+    closeVehicles();
+    setTimeout(() => navigateTo(btn.dataset.page), 200);
   });
 
   // Live parking timer for BMW
@@ -1579,16 +1579,11 @@ updateNavbar();
       const hrs  = Math.floor(diff / 3600000);
       const mins = Math.floor((diff % 3600000) / 60000);
       timerEl.textContent = hrs > 0 ? `${hrs}h ${mins}m` : `${mins}m`;
-
-      // Update cost
       const costEl = timerEl.closest(".db-vcard-body")?.querySelector("b:last-of-type");
-      if (costEl) {
-        const totalHrs = diff / 3600000;
-        costEl.textContent = `INR ${Math.round(totalHrs * 120)}`;
-      }
+      if (costEl) costEl.textContent = `INR ${Math.round((diff / 3600000) * 120)}`;
     }
 
     tick();
     timerInterval = setInterval(tick, 30000);
   }
-})();
+})()();
