@@ -1514,21 +1514,21 @@ updateNavbar();
   const vpage   = document.getElementById("dbVehiclesPage");
   const backBtn = document.getElementById("dbVehiclesBack");
 
-  if (!preview || !vpage) return;
+  if (!preview || !vpage) {
+    console.warn("[Vehicles] Elements not found", { preview, vpage });
+    return;
+  }
 
-  // Re-query cards each open so we always get current DOM
   function openVehicles() {
     const cards = [...document.querySelectorAll(".db-vcard")];
     vpage.classList.add("is-open");
     vpage.removeAttribute("aria-hidden");
     document.body.style.overflow = "hidden";
-
     cards.forEach((card, i) => {
       card.classList.remove("is-visible");
       card.style.transitionDelay = `${i * 120}ms`;
       setTimeout(() => card.classList.add("is-visible"), 80 + i * 120);
     });
-
     startVehicleTimer();
   }
 
@@ -1543,19 +1543,20 @@ updateNavbar();
     });
   }
 
-  // Use both click and pointerup to ensure it fires on all devices
+  // Attach directly on the element as well as via addEventListener
+  preview.onclick = openVehicles;
   preview.addEventListener("click", openVehicles);
   preview.addEventListener("keydown", (e) => {
     if (e.key === "Enter" || e.key === " ") { e.preventDefault(); openVehicles(); }
   });
 
   backBtn?.addEventListener("click", closeVehicles);
+  backBtn && (backBtn.onclick = closeVehicles);
 
   document.addEventListener("keydown", (e) => {
     if (e.key === "Escape" && vpage.classList.contains("is-open")) closeVehicles();
   });
 
-  // "Book Parking" → navigate to booking
   vpage.addEventListener("click", (e) => {
     const btn = e.target.closest("[data-page]");
     if (!btn) return;
@@ -1564,17 +1565,14 @@ updateNavbar();
     setTimeout(() => navigateTo(btn.dataset.page), 200);
   });
 
-  // Live parking timer for BMW
   let timerInterval = null;
   function startVehicleTimer() {
     clearInterval(timerInterval);
     const timerEl = document.querySelector(".db-vcard-timer[data-start]");
     if (!timerEl) return;
-
     const [h, m] = timerEl.dataset.start.split(":").map(Number);
     const startMs = new Date();
     startMs.setHours(h, m, 0, 0);
-
     function tick() {
       const diff = Math.max(0, Date.now() - startMs.getTime());
       const hrs  = Math.floor(diff / 3600000);
@@ -1583,7 +1581,6 @@ updateNavbar();
       const costEl = timerEl.closest(".db-vcard-body")?.querySelector("b:last-of-type");
       if (costEl) costEl.textContent = `INR ${Math.round((diff / 3600000) * 120)}`;
     }
-
     tick();
     timerInterval = setInterval(tick, 30000);
   }
