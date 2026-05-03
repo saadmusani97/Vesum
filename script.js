@@ -1,16 +1,16 @@
 const frameConfig = {
   framePath: "./frames",
-  totalFrames: 700,
+  totalFrames: 600,
   pad: 6,
 };
 
 const hero   = document.getElementById("sequenceHero");
 const canvas = document.getElementById("heroCanvas");
-const ctx    = canvas.getContext("2d", { alpha: false, desynchronized: true });
+const ctx    = canvas.getContext("2d", { alpha: false });
 ctx.imageSmoothingEnabled = false;
 
 const isMobile = window.matchMedia("(max-width: 720px)").matches;
-const stride   = isMobile ? 4 : 2;
+const stride   = isMobile ? 6 : 3;  // 200 frames desktop, 100 mobile
 const totalDisplay = Math.ceil(frameConfig.totalFrames / stride);
 
 const cache  = new Array(totalDisplay).fill(null);
@@ -109,7 +109,7 @@ function requestScrollUpdate() {
 
 // ── Canvas resize ─────────────────────────────────────────────────
 function resizeCanvas() {
-  const dpr = Math.min(window.devicePixelRatio || 1, 2);
+  const dpr = Math.min(window.devicePixelRatio || 1, 1.5); // cap 1.5x saves GPU
   cssWidth  = window.innerWidth;
   cssHeight = window.innerHeight;
   canvas.width  = Math.floor(cssWidth  * dpr);
@@ -121,36 +121,39 @@ function resizeCanvas() {
 
 // ── Preload frames — non-blocking ─────────────────────────────────
 function preloadAllFrames() {
-  const BATCH = isMobile ? 6 : 20;
+  const BATCH = isMobile ? 3 : 6;  // lean — don't saturate network
   let nextToLoad = 0;
   let loadedCount = 0;
-  const READY_THRESHOLD = isMobile ? 20 : 40;
+  const READY_THRESHOLD = isMobile ? 15 : 25;
 
   function loadOne(i) {
+    if (i >= totalDisplay) return;
     const img = new Image();
     img.decoding = "async";
-    img.onload = async () => {
-      try { cache[i] = await createImageBitmap(img); }
-      catch { cache[i] = img; }
-      loaded[i] = 1;
-      loadedCount++;
-      // Silently enable sequence once enough frames ready — no blocking
-      if (!sequenceReady && loadedCount >= READY_THRESHOLD) {
-        sequenceReady = true;
-        drawFrame(0);
-        requestScrollUpdate();
-        document.querySelectorAll(".next-section .reveal, .platform-section .reveal").forEach(el => el.classList.add("is-visible"));
-      }
-      if (nextToLoad < totalDisplay) loadOne(nextToLoad++);
+    img.onload = () => {
+      (typeof createImageBitmap !== "undefined"
+        ? createImageBitmap(img)
+        : Promise.resolve(img)
+      ).then(bmp => {
+        cache[i] = bmp;
+        loaded[i] = 1;
+        loadedCount++;
+        if (!sequenceReady && loadedCount >= READY_THRESHOLD) {
+          sequenceReady = true;
+          drawFrame(0);
+          requestScrollUpdate();
+        }
+        loadOne(nextToLoad++);
+      });
     };
     img.onerror = () => {
-      if (i === 0) skipSequenceHero();
-      if (nextToLoad < totalDisplay) loadOne(nextToLoad++);
+      if (i === 0) { skipSequenceHero(); return; }
+      loadOne(nextToLoad++);
     };
     img.src = frameUrl(i);
   }
 
-  for (let i = 0; i < Math.min(BATCH, totalDisplay); i++) loadOne(nextToLoad++);
+  for (let i = 0; i < BATCH; i++) loadOne(nextToLoad++);
 }
 
 // ── No-frames fallback ────────────────────────────────────────────
