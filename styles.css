@@ -207,8 +207,8 @@ button {
 
 .sequence-hero {
   position: relative;
-  height: 280vh;
-  min-height: 1800px;
+  height: 250vh;
+  min-height: 1600px;
   background: transparent;
 }
 
@@ -538,8 +538,8 @@ h1 {
   opacity: var(--next-opacity);
   transform: translateY(var(--next-shift));
   transition:
-    opacity 90ms linear,
-    transform 90ms linear;
+    opacity 60ms linear,
+    transform 60ms linear;
 }
 
 .section-heading {

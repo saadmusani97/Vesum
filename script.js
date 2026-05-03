@@ -153,6 +153,10 @@ function preloadAllFrames() {
         drawFrame(0);
         hideLoadingOverlay();
         requestScrollUpdate();
+        // Pre-trigger reveals so platform section isn't invisible on scroll-in
+        setTimeout(() => {
+          document.querySelectorAll(".next-section .reveal").forEach(el => el.classList.add("is-visible"));
+        }, 100);
       }
 
       if (nextToLoad < totalDisplay) loadOne(nextToLoad++);
