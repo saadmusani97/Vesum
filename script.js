@@ -10,17 +10,11 @@ const ctx    = canvas.getContext("2d", { alpha: false, desynchronized: true });
 ctx.imageSmoothingEnabled = false;
 
 const isMobile = window.matchMedia("(max-width: 720px)").matches;
-// stride 2 on desktop = 350 frames, stride 4 on mobile = 175 frames
 const stride   = isMobile ? 4 : 2;
 const totalDisplay = Math.ceil(frameConfig.totalFrames / stride);
 
-// ── Cache ─────────────────────────────────────────────────────────
 const cache  = new Array(totalDisplay).fill(null);
 const loaded = new Uint8Array(totalDisplay);
-let loadedCount = 0;
-
-// Unlock after just 60 frames — fast start
-const READY_THRESHOLD = isMobile ? 30 : 60;
 
 let sequenceReady   = false;
 let sequenceSkipped = false;
@@ -37,30 +31,6 @@ function frameUrl(displayIndex) {
 }
 
 function clamp(v, min, max) { return Math.min(Math.max(v, min), max); }
-
-// ── Loading overlay ───────────────────────────────────────────────
-const loadingOverlay = document.createElement("div");
-loadingOverlay.id = "frameLoader";
-loadingOverlay.innerHTML = `
-  <div class="fl-inner">
-    <div class="fl-bar-wrap"><div class="fl-bar" id="flBar"></div></div>
-    <p class="fl-label" id="flLabel">Loading experience…</p>
-  </div>`;
-document.body.appendChild(loadingOverlay);
-
-const flBar   = document.getElementById("flBar");
-const flLabel = document.getElementById("flLabel");
-
-function updateLoadingUI() {
-  const pct = Math.round((loadedCount / READY_THRESHOLD) * 100);
-  if (flBar)   flBar.style.width = `${Math.min(pct, 100)}%`;
-  if (flLabel) flLabel.textContent = pct < 100 ? `Loading… ${Math.min(pct, 100)}%` : "Ready";
-}
-
-function hideLoadingOverlay() {
-  loadingOverlay.classList.add("fl-done");
-  setTimeout(() => loadingOverlay.remove(), 600);
-}
 
 // ── Draw ──────────────────────────────────────────────────────────
 function drawFrame(idx) {
@@ -79,12 +49,10 @@ function drawFrame(idx) {
 function renderLoop() {
   if (sequenceReady && !sequenceSkipped) {
     let idx = targetDisplayIndex;
-    // Find nearest loaded frame if target not ready yet
     if (!loaded[idx]) {
       let best = lastDrawnIndex >= 0 ? lastDrawnIndex : 0;
       let bestDist = Math.abs(best - idx);
-      const search = 20;
-      for (let i = Math.max(0, idx - search); i <= Math.min(totalDisplay - 1, idx + search); i++) {
+      for (let i = Math.max(0, idx - 20); i <= Math.min(totalDisplay - 1, idx + 20); i++) {
         if (loaded[i] && Math.abs(i - idx) < bestDist) { best = i; bestDist = Math.abs(i - idx); }
       }
       idx = best;
@@ -97,7 +65,7 @@ function renderLoop() {
 // ── Scroll ────────────────────────────────────────────────────────
 function updateFromScroll() {
   raf = 0;
-  if (!sequenceReady || sequenceSkipped) return;
+  if (sequenceSkipped) return;
   const rect = hero.getBoundingClientRect();
   const scrollable = hero.offsetHeight - window.innerHeight;
   const progress = scrollable > 0 ? clamp(-rect.top / scrollable, 0, 1) : 0;
@@ -132,10 +100,12 @@ function resizeCanvas() {
   if (lastDrawnIndex >= 0) drawFrame(lastDrawnIndex);
 }
 
-// ── Preload all frames ────────────────────────────────────────────
+// ── Preload frames — non-blocking ─────────────────────────────────
 function preloadAllFrames() {
   const BATCH = isMobile ? 6 : 20;
   let nextToLoad = 0;
+  let loadedCount = 0;
+  const READY_THRESHOLD = isMobile ? 20 : 40;
 
   function loadOne(i) {
     const img = new Image();
@@ -145,31 +115,23 @@ function preloadAllFrames() {
       catch { cache[i] = img; }
       loaded[i] = 1;
       loadedCount++;
-      updateLoadingUI();
-
-      // Unlock sequence once threshold reached
+      // Silently enable sequence once enough frames ready — no blocking
       if (!sequenceReady && loadedCount >= READY_THRESHOLD) {
         sequenceReady = true;
         drawFrame(0);
-        hideLoadingOverlay();
         requestScrollUpdate();
-        // Pre-trigger reveals so platform section isn't invisible on scroll-in
-        setTimeout(() => {
-          document.querySelectorAll(".next-section .reveal").forEach(el => el.classList.add("is-visible"));
-        }, 100);
+        document.querySelectorAll(".next-section .reveal, .platform-section .reveal").forEach(el => el.classList.add("is-visible"));
       }
-
       if (nextToLoad < totalDisplay) loadOne(nextToLoad++);
     };
     img.onerror = () => {
-      if (i === 0) { skipSequenceHero(); return; }
+      if (i === 0) skipSequenceHero();
       if (nextToLoad < totalDisplay) loadOne(nextToLoad++);
     };
     img.src = frameUrl(i);
   }
 
-  const initial = Math.min(BATCH, totalDisplay);
-  for (let i = 0; i < initial; i++) loadOne(nextToLoad++);
+  for (let i = 0; i < Math.min(BATCH, totalDisplay); i++) loadOne(nextToLoad++);
 }
 
 // ── No-frames fallback ────────────────────────────────────────────
@@ -177,7 +139,6 @@ function skipSequenceHero() {
   if (sequenceSkipped) return;
   sequenceSkipped = true;
   cancelAnimationFrame(renderRaf);
-  loadingOverlay.remove();
   const root = document.documentElement;
   root.style.setProperty("--progress",         "1");
   root.style.setProperty("--meter-height",     "100%");
@@ -188,16 +149,21 @@ function skipSequenceHero() {
   root.style.setProperty("--next-opacity",     "1");
   root.style.setProperty("--next-shift",       "0px");
   if (hero) { hero.style.height = "0"; hero.style.overflow = "hidden"; hero.style.pointerEvents = "none"; }
-  document.querySelectorAll(".reveal").forEach((el) => el.classList.add("is-visible"));
+  document.querySelectorAll(".reveal").forEach(el => el.classList.add("is-visible"));
   window.removeEventListener("scroll", requestScrollUpdate);
 }
 
-// ── Boot ──────────────────────────────────────────────────────────
+// ── Boot — NO blocking, site shows immediately ────────────────────
 resizeCanvas();
 window.addEventListener("scroll", requestScrollUpdate, { passive: true });
 window.addEventListener("resize", () => { resizeCanvas(); requestScrollUpdate(); });
 renderLoop();
 preloadAllFrames();
+// Set initial CSS vars so next-section is visible right away
+// Sequence will overlay on top once frames load
+document.documentElement.style.setProperty("--next-opacity", "1");
+document.documentElement.style.setProperty("--next-shift", "0px");
+document.querySelectorAll(".reveal").forEach(el => el.classList.add("is-visible"));
 
 const navbar = document.getElementById("navbar");
 const navIndicator = document.querySelector(".nav-indicator");

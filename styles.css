@@ -210,6 +210,7 @@ button {
   height: 250vh;
   min-height: 1600px;
   background: transparent;
+  /* Canvas fades in once frames are ready — content always visible below */
 }
 
 .hero-sticky {
