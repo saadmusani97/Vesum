@@ -1,337 +1,183 @@
 const frameConfig = {
   framePath: "./frames",
-  totalFrames: 800,
-  desktopStride: 1,
-  mobileStride: 3,
+  totalFrames: 700,   // trim last 100 heavy frames for performance
   pad: 6,
 };
 
-const hero = document.getElementById("sequenceHero");
+const hero   = document.getElementById("sequenceHero");
 const canvas = document.getElementById("heroCanvas");
-const ctx = canvas.getContext("2d", { alpha: false });
-ctx.imageSmoothingEnabled = true;
-ctx.imageSmoothingQuality = "high";
+const ctx    = canvas.getContext("2d", { alpha: false, desynchronized: true });
+ctx.imageSmoothingEnabled = false; // no smoothing needed — faster
 
 const prefersReducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-const mobileQuery = window.matchMedia("(max-width: 720px)");
-let stride = mobileQuery.matches || prefersReducedMotion ? frameConfig.mobileStride : frameConfig.desktopStride;
-let playableFrames = Math.ceil(frameConfig.totalFrames / stride);
-let currentDisplayIndex = -1;
-let animatedDisplayIndex = 0;
-let currentRealIndex = 0;
-let lastDrawnIndex = -1;
-let raf = 0;
-let renderRaf = 0;
-let autoplayTimer = 0;
-let cssWidth = 0;
-let cssHeight = 0;
+const isMobile = window.matchMedia("(max-width: 720px)").matches;
 
-const cache = new Map();
-const loading = new Set();
-const pendingQueue = [];
-const maxConcurrent = mobileQuery.matches ? 3 : 6;
-const maxCacheSize = mobileQuery.matches ? 42 : 110;
+// On mobile load every 3rd frame, desktop every frame
+const stride       = isMobile ? 3 : 1;
+const totalDisplay = Math.ceil(frameConfig.totalFrames / stride);
 
-function frameUrl(realIndex) {
+// ── Frame cache — ImageBitmap for zero-copy GPU draw ─────────────
+const cache   = new Array(totalDisplay).fill(null); // index = display index
+const loaded  = new Uint8Array(totalDisplay);        // 1 = loaded
+let   loadedCount = 0;
+let   sequenceReady = false;
+
+let currentDisplayIndex = 0;
+let targetDisplayIndex  = 0;
+let lastDrawnIndex      = -1;
+let renderRaf           = 0;
+let raf                 = 0;
+let cssWidth = 0, cssHeight = 0;
+
+function frameUrl(displayIndex) {
+  const realIndex = Math.min(displayIndex * stride, frameConfig.totalFrames - 1);
   return `${frameConfig.framePath}/frame_${String(realIndex).padStart(frameConfig.pad, "0")}.jpg`;
 }
 
-function clamp(value, min, max) {
-  return Math.min(Math.max(value, min), max);
+function clamp(v, min, max) { return Math.min(Math.max(v, min), max); }
+
+// ── Draw ──────────────────────────────────────────────────────────
+function drawFrame(displayIndex) {
+  const bmp = cache[displayIndex];
+  if (!bmp) return;
+  const iw = bmp.width, ih = bmp.height;
+  const cw = canvas.width, ch = canvas.height;
+  const scale = Math.max(cw / iw, ch / ih);
+  const dw = iw * scale, dh = ih * scale;
+  const dx = (cw - dw) / 2, dy = (ch - dh) / 2;
+  ctx.drawImage(bmp, dx, dy, dw, dh);
+  lastDrawnIndex = displayIndex;
 }
 
-function realFrameForDisplay(displayIndex) {
-  return clamp(displayIndex * stride, 0, frameConfig.totalFrames - 1);
-}
-
-function queueFrame(realIndex, priority = 0) {
-  if (cache.has(realIndex) || loading.has(realIndex)) return;
-  const existing = pendingQueue.find((item) => item.realIndex === realIndex);
-  if (existing) {
-    existing.priority = Math.max(existing.priority, priority);
-    pendingQueue.sort((a, b) => b.priority - a.priority);
-    return;
-  }
-  pendingQueue.push({ realIndex, priority });
-  pendingQueue.sort((a, b) => b.priority - a.priority);
-  pumpQueue();
-}
-
-function prunePendingQueue(displayIndex, direction) {
-  const preloadBack = mobileQuery.matches ? 12 : 22;
-  const preloadAhead = mobileQuery.matches ? 34 : 68;
-  const minDisplay = clamp(displayIndex - preloadBack, 0, playableFrames - 1);
-  const maxDisplay = clamp(displayIndex + preloadAhead, 0, playableFrames - 1);
-  const minReal = realFrameForDisplay(direction >= 0 ? minDisplay : clamp(displayIndex - preloadAhead, 0, playableFrames - 1));
-  const maxReal = realFrameForDisplay(direction >= 0 ? maxDisplay : clamp(displayIndex + preloadBack, 0, playableFrames - 1));
-
-  for (let index = pendingQueue.length - 1; index >= 0; index -= 1) {
-    const realIndex = pendingQueue[index].realIndex;
-    if (realIndex < minReal || realIndex > maxReal) pendingQueue.splice(index, 1);
-  }
-}
-
-function pumpQueue() {
-  while (loading.size < maxConcurrent && pendingQueue.length) {
-    const { realIndex } = pendingQueue.shift();
-    if (cache.has(realIndex) || loading.has(realIndex)) continue;
-
-    loading.add(realIndex);
-    const image = new Image();
-    image.decoding = "async";
-    image.onload = async () => {
-      try {
-        if (image.decode) await image.decode();
-      } catch {
-        // Safari can reject decode after onload for already decoded images.
+// ── Render loop — smooth interpolation ───────────────────────────
+function renderLoop() {
+  if (sequenceReady) {
+    // Snap directly — no lerp, scroll position IS the frame
+    if (targetDisplayIndex !== lastDrawnIndex) {
+      // Find closest loaded frame if target not ready
+      let idx = targetDisplayIndex;
+      if (!loaded[idx]) {
+        let best = lastDrawnIndex >= 0 ? lastDrawnIndex : 0;
+        let bestDist = Math.abs(best - idx);
+        for (let i = Math.max(0, idx - 8); i <= Math.min(totalDisplay - 1, idx + 8); i++) {
+          if (loaded[i] && Math.abs(i - idx) < bestDist) { best = i; bestDist = Math.abs(i - idx); }
+        }
+        idx = best;
       }
-      loading.delete(realIndex);
-      cache.set(realIndex, image);
-      trimCache();
-      if (realIndex === currentRealIndex) drawFrame(realIndex);
-      pumpQueue();
-    };
-    image.onerror = () => {
-      loading.delete(realIndex);
-      // Only skip the sequence if the very first frame fails to load
-      if (realIndex === 0) skipSequenceHero();
-      pumpQueue();
-    };
-    image.src = frameUrl(realIndex);
-  }
-}
-
-function trimCache() {
-  if (cache.size <= maxCacheSize) return;
-  const keepRadius = mobileQuery.matches ? 72 : 120;
-  for (const key of cache.keys()) {
-    if (cache.size <= maxCacheSize) break;
-    if (Math.abs(key - currentRealIndex) > keepRadius && key !== lastDrawnIndex) {
-      cache.delete(key);
+      if (idx !== lastDrawnIndex) drawFrame(idx);
     }
   }
+  renderRaf = requestAnimationFrame(renderLoop);
 }
 
-function closestLoadedFrame(realIndex) {
-  if (cache.has(realIndex)) return realIndex;
-
-  let best = lastDrawnIndex >= 0 && cache.has(lastDrawnIndex) ? lastDrawnIndex : -1;
-  let bestDistance = best >= 0 ? Math.abs(best - realIndex) : Infinity;
-
-  for (const key of cache.keys()) {
-    const distance = Math.abs(key - realIndex);
-    if (distance < bestDistance) {
-      best = key;
-      bestDistance = distance;
-    }
-  }
-
-  return best;
-}
-
-function drawCoverImage(image) {
-  const imageRatio = image.naturalWidth / image.naturalHeight;
-  const canvasRatio = canvas.width / canvas.height;
-  let drawWidth = canvas.width;
-  let drawHeight = canvas.height;
-  let drawX = 0;
-  let drawY = 0;
-
-  if (imageRatio > canvasRatio) {
-    drawWidth = canvas.height * imageRatio;
-    drawX = (canvas.width - drawWidth) / 2;
-  } else {
-    drawHeight = canvas.width / imageRatio;
-    drawY = (canvas.height - drawHeight) / 2;
-  }
-
-  ctx.drawImage(image, drawX, drawY, drawWidth, drawHeight);
-}
-
-function drawFrame(realIndex) {
-  const image = cache.get(realIndex);
-  if (!image) return;
-  ctx.clearRect(0, 0, canvas.width, canvas.height);
-  drawCoverImage(image);
-  lastDrawnIndex = realIndex;
-}
-
-function resizeCanvas() {
-  const dpr = Math.min(window.devicePixelRatio || 1, 2);
-  cssWidth = window.innerWidth;
-  cssHeight = window.innerHeight;
-  canvas.width = Math.floor(cssWidth * dpr);
-  canvas.height = Math.floor(cssHeight * dpr);
-  ctx.imageSmoothingEnabled = true;
-  ctx.imageSmoothingQuality = "high";
-  canvas.style.width = `${cssWidth}px`;
-  canvas.style.height = `${cssHeight}px`;
-  if (lastDrawnIndex >= 0) drawFrame(lastDrawnIndex);
-}
-
-function loadAround(displayIndex, direction) {
-  const realIndex = realFrameForDisplay(displayIndex);
-  currentRealIndex = realIndex;
-  prunePendingQueue(displayIndex, direction);
-  queueFrame(realIndex, 1000);
-
-  const near = mobileQuery.matches ? 10 : 18;
-  const far = mobileQuery.matches ? 28 : 54;
-  for (let offset = 1; offset <= far; offset += 1) {
-    const ahead = displayIndex + offset * direction;
-    const behind = displayIndex - offset * direction;
-    const priority = offset <= near ? 700 - offset : 260 - offset;
-    if (ahead >= 0 && ahead < playableFrames) queueFrame(realFrameForDisplay(ahead), priority);
-    if (offset <= near && behind >= 0 && behind < playableFrames) {
-      queueFrame(realFrameForDisplay(behind), priority - 60);
-    }
-  }
-}
-
+// ── Scroll handler ────────────────────────────────────────────────
 function updateFromScroll() {
   raf = 0;
   const rect = hero.getBoundingClientRect();
   const scrollable = hero.offsetHeight - window.innerHeight;
-  const rawProgress = scrollable > 0 ? -rect.top / scrollable : 0;
-  const progress = clamp(rawProgress, 0, 1);
-  const displayIndex = Math.round(progress * (playableFrames - 1));
-  const direction = displayIndex >= currentDisplayIndex ? 1 : -1;
+  const progress = scrollable > 0 ? clamp(-rect.top / scrollable, 0, 1) : 0;
+
+  targetDisplayIndex = Math.round(progress * (totalDisplay - 1));
+
   const nextOpacity = clamp((progress - 0.88) / 0.12, 0, 1);
-  const heroFade = clamp(1 - Math.max(0, progress - 0.68) * 3.1, 0, 1);
-
-  document.documentElement.style.setProperty("--progress", progress.toFixed(4));
-  document.documentElement.style.setProperty("--meter-height", `${(progress * 100).toFixed(2)}%`);
-  document.documentElement.style.setProperty("--canvas-scale", (1 + progress * 0.035).toFixed(4));
-  document.documentElement.style.setProperty("--vignette-opacity", (1 - progress * 0.18).toFixed(4));
-  document.documentElement.style.setProperty("--hero-opacity", heroFade.toFixed(4));
-  document.documentElement.style.setProperty("--hero-shift", `${(progress * -28).toFixed(2)}px`);
-  document.documentElement.style.setProperty("--next-opacity", nextOpacity.toFixed(4));
-  document.documentElement.style.setProperty("--next-shift", `${((1 - nextOpacity) * 28).toFixed(2)}px`);
-
-  if (displayIndex !== currentDisplayIndex) {
-    currentDisplayIndex = displayIndex;
-    const realIndex = realFrameForDisplay(displayIndex);
-    loadAround(displayIndex, direction);
-  }
+  const heroFade    = clamp(1 - Math.max(0, progress - 0.68) * 3.1, 0, 1);
+  const root = document.documentElement;
+  root.style.setProperty("--progress",         progress.toFixed(4));
+  root.style.setProperty("--meter-height",     `${(progress * 100).toFixed(2)}%`);
+  root.style.setProperty("--canvas-scale",     (1 + progress * 0.035).toFixed(4));
+  root.style.setProperty("--vignette-opacity", (1 - progress * 0.18).toFixed(4));
+  root.style.setProperty("--hero-opacity",     heroFade.toFixed(4));
+  root.style.setProperty("--hero-shift",       `${(progress * -28).toFixed(2)}px`);
+  root.style.setProperty("--next-opacity",     nextOpacity.toFixed(4));
+  root.style.setProperty("--next-shift",       `${((1 - nextOpacity) * 28).toFixed(2)}px`);
 }
 
 function requestScrollUpdate() {
   if (!raf) raf = requestAnimationFrame(updateFromScroll);
 }
 
-function renderLoop() {
-  if (currentDisplayIndex >= 0) {
-    const delta = currentDisplayIndex - animatedDisplayIndex;
-    animatedDisplayIndex += delta * (mobileQuery.matches ? 0.24 : 0.18);
-    if (Math.abs(delta) < 0.08) animatedDisplayIndex = currentDisplayIndex;
+// ── Canvas resize ─────────────────────────────────────────────────
+function resizeCanvas() {
+  const dpr = Math.min(window.devicePixelRatio || 1, 2);
+  cssWidth  = window.innerWidth;
+  cssHeight = window.innerHeight;
+  canvas.width  = Math.floor(cssWidth  * dpr);
+  canvas.height = Math.floor(cssHeight * dpr);
+  canvas.style.width  = `${cssWidth}px`;
+  canvas.style.height = `${cssHeight}px`;
+  if (lastDrawnIndex >= 0) drawFrame(lastDrawnIndex);
+}
 
-    const desiredRealIndex = realFrameForDisplay(Math.round(animatedDisplayIndex));
-    const drawableIndex = closestLoadedFrame(desiredRealIndex);
-    if (drawableIndex >= 0 && drawableIndex !== lastDrawnIndex) drawFrame(drawableIndex);
+// ── Preload ALL frames in parallel batches ────────────────────────
+// Load first 30 frames immediately (high priority), then rest in background
+function preloadAllFrames() {
+  const BATCH = isMobile ? 4 : 12; // concurrent requests
+  let nextToLoad = 0;
+  let done = 0;
+
+  function loadOne(i) {
+    const img = new Image();
+    img.decoding = "async";
+    img.onload = async () => {
+      try {
+        // ImageBitmap = GPU-ready, zero-copy draw
+        cache[i] = await createImageBitmap(img);
+      } catch {
+        cache[i] = img; // fallback to HTMLImageElement
+      }
+      loaded[i] = 1;
+      loadedCount++;
+      done++;
+
+      // Mark ready once first 30 frames loaded
+      if (!sequenceReady && loadedCount >= Math.min(30, totalDisplay)) {
+        sequenceReady = true;
+        drawFrame(0);
+      }
+
+      // Pump next
+      if (nextToLoad < totalDisplay) loadOne(nextToLoad++);
+    };
+    img.onerror = () => {
+      done++;
+      if (i === 0) skipSequenceHero();
+      if (nextToLoad < totalDisplay) loadOne(nextToLoad++);
+    };
+    img.src = frameUrl(i);
   }
-  renderRaf = requestAnimationFrame(renderLoop);
+
+  // Kick off initial batch — prioritise first 30 frames
+  const initialBatch = Math.min(BATCH, totalDisplay);
+  for (let i = 0; i < initialBatch; i++) loadOne(nextToLoad++);
 }
 
-function configureFrameDensity() {
-  stride = mobileQuery.matches || prefersReducedMotion ? frameConfig.mobileStride : frameConfig.desktopStride;
-  playableFrames = Math.ceil(frameConfig.totalFrames / stride);
-  currentDisplayIndex = -1;
-  animatedDisplayIndex = 0;
-  pendingQueue.length = 0;
-  cache.clear();
-  loading.clear();
-  primeInitialFrames();
-  requestScrollUpdate();
-}
-
-function primeInitialFrames() {
-  queueFrame(0, 1200);
-  const warmCount = mobileQuery.matches ? 22 : 48;
-  for (let index = 1; index < warmCount; index += 1) {
-    queueFrame(realFrameForDisplay(index), 900 - index);
-  }
-}
-
-// ── No-frames fallback ───────────────────────────────────────────
-// Called when frame_000000.jpg 404s (frames not deployed).
-// Collapses the scroll-sequence hero and makes all content visible.
+// ── No-frames fallback ────────────────────────────────────────────
 let sequenceSkipped = false;
 function skipSequenceHero() {
   if (sequenceSkipped) return;
   sequenceSkipped = true;
-
   cancelAnimationFrame(renderRaf);
-  clearInterval(autoplayTimer);
-
-  // Set CSS vars to end-of-sequence so platform section is fully visible
   const root = document.documentElement;
-  root.style.setProperty("--progress", "1");
-  root.style.setProperty("--meter-height", "100%");
-  root.style.setProperty("--canvas-scale", "1");
+  root.style.setProperty("--progress",         "1");
+  root.style.setProperty("--meter-height",     "100%");
+  root.style.setProperty("--canvas-scale",     "1");
   root.style.setProperty("--vignette-opacity", "0");
-  root.style.setProperty("--hero-opacity", "0");
-  root.style.setProperty("--hero-shift", "0px");
-  root.style.setProperty("--next-opacity", "1");
-  root.style.setProperty("--next-shift", "0px");
-
-  // Collapse hero so it takes no scroll space
-  if (hero) {
-    hero.style.height = "0";
-    hero.style.overflow = "hidden";
-    hero.style.pointerEvents = "none";
-  }
-
-  // Force all reveal elements visible immediately
+  root.style.setProperty("--hero-opacity",     "0");
+  root.style.setProperty("--hero-shift",       "0px");
+  root.style.setProperty("--next-opacity",     "1");
+  root.style.setProperty("--next-shift",       "0px");
+  if (hero) { hero.style.height = "0"; hero.style.overflow = "hidden"; hero.style.pointerEvents = "none"; }
   document.querySelectorAll(".reveal").forEach((el) => el.classList.add("is-visible"));
-
   window.removeEventListener("scroll", requestScrollUpdate);
 }
 
-// ── Detect missing frames immediately ────────────────────────────
-(function detectFrames() {
-  const probe = new Image();
-  const timer = setTimeout(() => skipSequenceHero(), 3000);
-  probe.onload = () => clearTimeout(timer); // frames exist, cancel skip
-  probe.onerror = () => { clearTimeout(timer); skipSequenceHero(); };
-  probe.src = frameUrl(0) + "?probe=1";
-})();
-
-function startMobileAutoplayFallback() {
-  clearInterval(autoplayTimer);
-  autoplayTimer = window.setInterval(() => {
-    const rect = hero.getBoundingClientRect();
-    const heroVisible = rect.top < window.innerHeight && rect.bottom > 0;
-    if (!heroVisible || Math.abs(rect.top) > 24) return;
-    const next = (currentDisplayIndex + 1) % Math.min(playableFrames, 160);
-    currentDisplayIndex = next;
-    animatedDisplayIndex = next;
-    const realIndex = realFrameForDisplay(next);
-    loadAround(next, 1);
-    const drawableIndex = closestLoadedFrame(realIndex);
-    if (drawableIndex >= 0) drawFrame(drawableIndex);
-  }, 80);
-}
-
-let resizeTimer = 0;
-window.addEventListener("resize", () => {
-  clearTimeout(resizeTimer);
-  resizeTimer = setTimeout(() => {
-    resizeCanvas();
-    requestScrollUpdate();
-  }, 120);
-});
-window.addEventListener("scroll", requestScrollUpdate, { passive: true });
-mobileQuery.addEventListener("change", () => {
-  clearInterval(autoplayTimer);
-  configureFrameDensity();
-  startMobileAutoplayFallback();
-});
-
+// ── Boot ──────────────────────────────────────────────────────────
 resizeCanvas();
-primeInitialFrames();
-requestScrollUpdate();
-startMobileAutoplayFallback();
+window.addEventListener("scroll", requestScrollUpdate, { passive: true });
+window.addEventListener("resize", () => { resizeCanvas(); requestScrollUpdate(); });
 renderLoop();
+preloadAllFrames();
+requestScrollUpdate();
 
 const navbar = document.getElementById("navbar");
 const navIndicator = document.querySelector(".nav-indicator");
