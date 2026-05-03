@@ -4,6 +4,9 @@
   "private": true,
   "description": "VESUM premium web app with onboarding + OTP APIs",
   "main": "server.js",
+  "engines": {
+    "node": ">=18.0.0"
+  },
   "scripts": {
     "dev": "node server.js",
     "start": "node server.js"
