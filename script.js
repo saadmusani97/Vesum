@@ -93,6 +93,8 @@ function pumpQueue() {
     };
     image.onerror = () => {
       loading.delete(realIndex);
+      // If frame 0 fails, frames aren't deployed — skip the sequence hero
+      if (realIndex === 0) skipSequenceHero();
       pumpQueue();
     };
     image.src = frameUrl(realIndex);
@@ -250,8 +252,39 @@ function primeInitialFrames() {
   }
 }
 
+// ── No-frames fallback ───────────────────────────────────────────
+// Called when frame_000000.jpg 404s (frames not deployed).
+// Collapses the scroll-sequence hero and makes all content visible.
+let sequenceSkipped = false;
+function skipSequenceHero() {
+  if (sequenceSkipped) return;
+  sequenceSkipped = true;
+
+  cancelAnimationFrame(renderRaf);
+  clearInterval(autoplayTimer);
+
+  // Set CSS vars to end-of-sequence so platform section is fully visible
+  const root = document.documentElement;
+  root.style.setProperty("--progress", "1");
+  root.style.setProperty("--meter-height", "100%");
+  root.style.setProperty("--canvas-scale", "1");
+  root.style.setProperty("--vignette-opacity", "0");
+  root.style.setProperty("--hero-opacity", "0");
+  root.style.setProperty("--hero-shift", "0px");
+  root.style.setProperty("--next-opacity", "1");
+  root.style.setProperty("--next-shift", "0px");
+
+  // Collapse hero so it takes no scroll space
+  if (hero) {
+    hero.style.height = "0";
+    hero.style.overflow = "hidden";
+    hero.style.pointerEvents = "none";
+  }
+
+  window.removeEventListener("scroll", requestScrollUpdate);
+}
+
 function startMobileAutoplayFallback() {
-  if (!mobileQuery.matches || prefersReducedMotion) return;
   clearInterval(autoplayTimer);
   autoplayTimer = window.setInterval(() => {
     const rect = hero.getBoundingClientRect();
