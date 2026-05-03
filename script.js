@@ -1,6 +1,6 @@
 const frameConfig = {
   framePath: "./frames",
-  totalFrames: 850,
+  totalFrames: 800,
   desktopStride: 1,
   mobileStride: 3,
   pad: 6,
@@ -93,7 +93,7 @@ function pumpQueue() {
     };
     image.onerror = () => {
       loading.delete(realIndex);
-      // If frame 0 fails, frames aren't deployed — skip the sequence hero
+      // Only skip the sequence if the very first frame fails to load
       if (realIndex === 0) skipSequenceHero();
       pumpQueue();
     };
@@ -288,15 +288,11 @@ function skipSequenceHero() {
 }
 
 // ── Detect missing frames immediately ────────────────────────────
-// If the frames folder isn't deployed, skip the sequence right away
-// instead of waiting for onerror callbacks.
 (function detectFrames() {
   const probe = new Image();
-  probe.onload = () => { /* frames exist — normal mode */ };
-  probe.onerror = () => skipSequenceHero();
-  // Short timeout fallback in case neither fires quickly
-  const timer = setTimeout(() => skipSequenceHero(), 2000);
-  probe.onload = () => clearTimeout(timer);
+  const timer = setTimeout(() => skipSequenceHero(), 3000);
+  probe.onload = () => clearTimeout(timer); // frames exist, cancel skip
+  probe.onerror = () => { clearTimeout(timer); skipSequenceHero(); };
   probe.src = frameUrl(0) + "?probe=1";
 })();
 
