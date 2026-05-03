@@ -1460,6 +1460,8 @@ updateNavbar();
   card.addEventListener("keydown", e => {
     if (e.key === "Enter" || e.key === " ") { e.preventDefault(); openMapModal(); }
   });
+  // Expose globally for inline onclick fallback
+  window._openLocMapModal = openMapModal;
 
   function openMapModal() {
     // Reset tilt

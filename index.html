@@ -307,7 +307,7 @@
                   <div class="confirmed-row"><span>Paid</span><b id="confirmedAmount">—</b></div>
                   <div class="confirmed-row"><span>Status</span><b class="confirmed-live">● Live</b></div>
                 </div>
-                <div class="loc-map-card glow-card" id="locMapCard" role="button" tabindex="0" aria-label="View parking location on map">
+                <div class="loc-map-card glow-card" id="locMapCard" role="button" tabindex="0" aria-label="View parking location on map" onclick="window._openLocMapModal&&window._openLocMapModal()">
                   <div class="loc-map-collapsed">
                     <div class="loc-map-top">
                       <svg class="loc-map-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
@@ -639,7 +639,7 @@
             </div>
 
             <!-- Right: vehicles -->
-            <article class="dash-vehicles" id="dbVehiclesPreview" role="button" tabindex="0" aria-label="View my vehicles">
+            <article class="dash-vehicles" id="dbVehiclesPreview" role="button" tabindex="0" aria-label="View my vehicles" onclick="(function(){var v=document.getElementById('dbVehiclesPage');if(v){v.classList.add('is-open');v.removeAttribute('aria-hidden');document.body.style.overflow='hidden';document.querySelectorAll('.db-vcard').forEach(function(c,i){c.classList.remove('is-visible');c.style.transitionDelay=i*120+'ms';setTimeout(function(){c.classList.add('is-visible')},80+i*120)})}})()"  onkeydown="if(event.key==='Enter'||event.key===' '){this.click()}"  >
               <div class="dash-vehicles-header">
                 <span class="dash-panel-label">My Vehicles</span>
                 <span class="dash-vehicles-badge">3 registered</span>
@@ -682,7 +682,7 @@
     <!-- ── Vehicles overlay — lives directly in body so position:fixed works correctly ── -->
     <div class="db-vehicles-page" id="dbVehiclesPage" aria-hidden="true">
       <div class="db-vpage-header">
-        <button class="db-vpage-back" id="dbVehiclesBack" type="button">
+        <button class="db-vpage-back" id="dbVehiclesBack" type="button" onclick="(function(){var v=document.getElementById('dbVehiclesPage');if(v){v.classList.remove('is-open');v.setAttribute('aria-hidden','true');document.body.style.overflow=''}})()">
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
           Back to Overview
         </button>
