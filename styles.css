@@ -2173,6 +2173,7 @@ h1 {
   backdrop-filter: blur(8px);
   opacity: 0;
   transition: opacity 350ms ease;
+  cursor: pointer;
 }
 
 #locMapModal.lmm-open .lmm-backdrop { opacity: 1; }

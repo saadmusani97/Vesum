@@ -1433,20 +1433,24 @@ updateNavbar();
   const card = document.getElementById("locMapCard");
 
   function openMapModal() {
-    if (card) { card.style.transform = ""; }
     document.getElementById("locMapModal")?.remove();
+    if (card) { card.style.transform = ""; }
 
     const locName   = document.getElementById("locMapInfoName")?.textContent
                    || document.getElementById("locMapName")?.textContent
                    || "Selected Society";
     const locCoords = document.getElementById("locMapCoords")?.textContent
-                   || "Mumbai, Maharashtra";
+                   || "Mumbai, Maharashtra · Live";
+
+    // Get card position to animate FROM
+    const rect = card ? card.getBoundingClientRect() : { left: window.innerWidth/2 - 120, top: window.innerHeight/2 - 70, width: 240, height: 140 };
 
     const modal = document.createElement("div");
     modal.id = "locMapModal";
+    modal.style.cssText = "position:fixed;inset:0;z-index:9999;pointer-events:none";
     modal.innerHTML = `
       <div class="lmm-backdrop"></div>
-      <div class="lmm-card" role="dialog" aria-modal="true" aria-label="Parking location map">
+      <div class="lmm-card" role="dialog" aria-modal="true">
         <button class="lmm-close" aria-label="Close">&times;</button>
         <div class="lmm-map">
           <div class="lmm-bg"></div>
@@ -1485,28 +1489,61 @@ updateNavbar();
       </div>`;
     document.body.appendChild(modal);
 
-    requestAnimationFrame(() => {
-      modal.classList.add("lmm-open");
-      modal.querySelectorAll(".lmm-road-main, .lmm-road-sec").forEach((l, i) => {
-        l.style.strokeDasharray  = "500";
-        l.style.strokeDashoffset = "500";
-        setTimeout(() => {
-          l.style.transition = `stroke-dashoffset ${0.7 + i * 0.05}s cubic-bezier(0.22,1,0.36,1)`;
-          l.style.strokeDashoffset = "0";
-        }, 150 + i * 40);
-      });
-      modal.querySelectorAll(".lmm-building").forEach((b, i) => {
-        setTimeout(() => b.classList.add("lmm-in"), 300 + i * 70);
-      });
-      setTimeout(() => modal.querySelector(".lmm-pin")?.classList.add("lmm-in"), 280);
-      setTimeout(() => modal.querySelector(".lmm-info")?.classList.add("lmm-in"), 400);
-    });
+    const lmmCard = modal.querySelector(".lmm-card");
+
+    // Start from card's exact position & size, then spring to center
+    lmmCard.style.position   = "fixed";
+    lmmCard.style.left       = rect.left + "px";
+    lmmCard.style.top        = rect.top  + "px";
+    lmmCard.style.width      = rect.width  + "px";
+    lmmCard.style.height     = rect.height + "px";
+    lmmCard.style.borderRadius = "16px";
+    lmmCard.style.transition = "none";
+    modal.style.pointerEvents = "auto";
+
+    requestAnimationFrame(() => requestAnimationFrame(() => {
+      // Animate to full size centered
+      lmmCard.style.transition = "left 480ms cubic-bezier(0.34,1.2,0.64,1), top 480ms cubic-bezier(0.34,1.2,0.64,1), width 480ms cubic-bezier(0.34,1.2,0.64,1), height 480ms cubic-bezier(0.34,1.2,0.64,1), border-radius 480ms ease";
+      const tw = Math.min(420, window.innerWidth - 40);
+      const th = 380;
+      lmmCard.style.left   = ((window.innerWidth  - tw) / 2) + "px";
+      lmmCard.style.top    = ((window.innerHeight - th) / 2) + "px";
+      lmmCard.style.width  = tw + "px";
+      lmmCard.style.height = th + "px";
+      lmmCard.style.borderRadius = "20px";
+
+      modal.querySelector(".lmm-backdrop").style.opacity = "1";
+
+      // Roads draw after card opens
+      setTimeout(() => {
+        modal.querySelectorAll(".lmm-road-main, .lmm-road-sec").forEach((l, i) => {
+          l.style.strokeDasharray  = "500";
+          l.style.strokeDashoffset = "500";
+          setTimeout(() => {
+            l.style.transition = `stroke-dashoffset ${0.6 + i * 0.04}s cubic-bezier(0.22,1,0.36,1)`;
+            l.style.strokeDashoffset = "0";
+          }, i * 35);
+        });
+        modal.querySelectorAll(".lmm-building").forEach((b, i) => {
+          setTimeout(() => b.classList.add("lmm-in"), 200 + i * 60);
+        });
+        setTimeout(() => modal.querySelector(".lmm-pin")?.classList.add("lmm-in"), 200);
+        setTimeout(() => modal.querySelector(".lmm-info")?.classList.add("lmm-in"), 320);
+      }, 300);
+    }));
 
     function close() {
-      modal.classList.remove("lmm-open");
-      modal.classList.add("lmm-out");
-      setTimeout(() => modal.remove(), 400);
+      // Shrink back to card position
+      lmmCard.style.transition = "left 350ms cubic-bezier(0.22,1,0.36,1), top 350ms cubic-bezier(0.22,1,0.36,1), width 350ms cubic-bezier(0.22,1,0.36,1), height 350ms cubic-bezier(0.22,1,0.36,1), opacity 300ms ease, border-radius 350ms ease";
+      lmmCard.style.left   = rect.left + "px";
+      lmmCard.style.top    = rect.top  + "px";
+      lmmCard.style.width  = rect.width  + "px";
+      lmmCard.style.height = rect.height + "px";
+      lmmCard.style.opacity = "0";
+      modal.querySelector(".lmm-backdrop").style.opacity = "0";
+      setTimeout(() => modal.remove(), 380);
     }
+
     modal.querySelector(".lmm-close").addEventListener("click", close);
     modal.querySelector(".lmm-backdrop").addEventListener("click", close);
     document.addEventListener("keydown", function esc(e) {
@@ -1514,12 +1551,10 @@ updateNavbar();
     });
   }
 
-  // Always expose globally — works even if card is null at load time
   window._openLocMapModal = openMapModal;
-
   if (!card) return;
 
-  // Spring tilt
+  // Spring tilt on hover
   let rotX = 0, rotY = 0, velX = 0, velY = 0, tX = 0, tY = 0, raf = 0;
   function spring() {
     velX = velX * 0.68 + (tX - rotX) * 0.22;
