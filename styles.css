@@ -2167,26 +2167,24 @@ h1 {
   margin: 20px auto 0;
   perspective: 1000px;
   transition:
-    width  480ms cubic-bezier(0.34, 1.56, 0.64, 1),
-    height 480ms cubic-bezier(0.34, 1.56, 0.64, 1),
-    box-shadow 300ms ease,
-    border-color 300ms ease;
-  will-change: transform, width, height;
+    width  500ms cubic-bezier(0.34, 1.4, 0.64, 1),
+    height 500ms cubic-bezier(0.34, 1.4, 0.64, 1),
+    border-color 300ms ease,
+    box-shadow 300ms ease;
 }
 
-/* Entrance animation */
 .loc-map-card.is-card-visible {
   animation: locCardIn 600ms cubic-bezier(0.22, 1, 0.36, 1) both;
 }
 
 @keyframes locCardIn {
   from { opacity: 0; transform: translateY(28px) scale(0.94); }
-  to   { opacity: 1; transform: translateY(0)    scale(1);    }
+  to   { opacity: 1; transform: none; }
 }
 
 .loc-map-card:hover {
-  border-color: rgba(52, 211, 153, 0.38);
-  box-shadow: 0 0 40px rgba(52, 211, 153, 0.12);
+  border-color: rgba(52,211,153,0.4);
+  box-shadow: 0 0 40px rgba(52,211,153,0.12);
 }
 
 .loc-map-card.is-expanded {
@@ -2194,7 +2192,7 @@ h1 {
   height: 280px;
 }
 
-/* Collapsed layer */
+/* ── Collapsed layer ── */
 .loc-map-collapsed {
   position: absolute;
   inset: 0;
@@ -2203,7 +2201,7 @@ h1 {
   flex-direction: column;
   justify-content: space-between;
   padding: 18px 20px;
-  transition: opacity 250ms ease;
+  transition: opacity 200ms ease;
 }
 
 .loc-map-card.is-expanded .loc-map-collapsed {
@@ -2222,7 +2220,7 @@ h1 {
   transition: filter 300ms ease;
 }
 
-.loc-map-icon.is-hovered {
+.loc-map-card:hover .loc-map-icon {
   filter: drop-shadow(0 0 8px rgba(52,211,153,0.6));
 }
 
@@ -2233,7 +2231,6 @@ h1 {
   padding: 4px 10px;
   border-radius: 999px;
   background: rgba(255,255,255,0.05);
-  backdrop-filter: blur(4px);
   font-size: 0.65rem;
   font-weight: 700;
   color: var(--muted);
@@ -2242,23 +2239,16 @@ h1 {
   transition: background 200ms ease;
 }
 
-.loc-map-card:hover .loc-map-live {
-  background: rgba(255,255,255,0.08);
-}
+.loc-map-card:hover .loc-map-live { background: rgba(255,255,255,0.09); }
 
 .loc-live-dot {
-  width: 6px;
-  height: 6px;
+  width: 6px; height: 6px;
   border-radius: 999px;
   background: #34d399;
   flex-shrink: 0;
 }
 
-.loc-map-bottom {
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-}
+.loc-map-bottom { display: flex; flex-direction: column; gap: 6px; }
 
 .loc-map-name {
   margin: 0;
@@ -2268,31 +2258,27 @@ h1 {
   transition: transform 300ms cubic-bezier(0.34,1.56,0.64,1);
 }
 
-.loc-map-card:hover .loc-map-name {
-  transform: translateX(4px);
-}
+.loc-map-card:hover .loc-map-name { transform: translateX(4px); }
 
 .loc-map-underline {
   height: 1px;
-  background: linear-gradient(90deg, rgba(52,211,153,0.5), rgba(52,211,153,0.3), transparent);
-  transform: scaleX(0.3);
+  background: linear-gradient(90deg, rgba(52,211,153,0.6), rgba(52,211,153,0.2), transparent);
+  transform: scaleX(0.25);
   transform-origin: left;
   transition: transform 400ms ease;
 }
 
-.loc-map-underline.is-hovered,
-.loc-map-card.is-expanded .loc-map-underline {
-  transform: scaleX(1);
-}
+.loc-map-card:hover .loc-map-underline,
+.loc-map-card.is-expanded .loc-map-underline { transform: scaleX(1); }
 
-/* Expanded layer */
+/* ── Expanded layer ── */
 .loc-map-expanded {
   position: absolute;
   inset: 0;
   z-index: 1;
   opacity: 0;
   pointer-events: none;
-  transition: opacity 350ms ease 100ms;
+  transition: opacity 300ms ease 80ms;
 }
 
 .loc-map-card.is-expanded .loc-map-expanded {
@@ -2309,15 +2295,15 @@ h1 {
 .loc-map-roads {
   position: absolute;
   inset: 0;
-  width: 100%;
-  height: 100%;
+  width: 100%; height: 100%;
 }
 
+/* Roads draw in via stroke-dashoffset */
 .loc-road-main {
-  stroke: rgba(255,255,255,0.25);
+  stroke: rgba(255,255,255,0.22);
   stroke-dasharray: 400;
   stroke-dashoffset: 400;
-  transition: stroke-dashoffset 800ms ease;
+  transition: stroke-dashoffset 700ms cubic-bezier(0.22,1,0.36,1);
 }
 
 .loc-road-sec {
@@ -2325,12 +2311,29 @@ h1 {
   stroke-width: 1.5;
   stroke-dasharray: 400;
   stroke-dashoffset: 400;
-  transition: stroke-dashoffset 600ms ease;
+  transition: stroke-dashoffset 500ms cubic-bezier(0.22,1,0.36,1);
 }
 
-.loc-map-card.is-expanded .loc-road-main { stroke-dashoffset: 0; }
-.loc-map-card.is-expanded .loc-road-sec  { stroke-dashoffset: 0; transition-delay: 200ms; }
+.loc-map-card.is-expanded .loc-road-main {
+  stroke-dashoffset: 0;
+}
+.loc-map-card.is-expanded .loc-road-main:nth-child(1) { transition-delay: 100ms; }
+.loc-map-card.is-expanded .loc-road-main:nth-child(2) { transition-delay: 160ms; }
+.loc-map-card.is-expanded .loc-road-main:nth-child(3) { transition-delay: 220ms; }
+.loc-map-card.is-expanded .loc-road-main:nth-child(4) { transition-delay: 280ms; }
 
+.loc-map-card.is-expanded .loc-road-sec {
+  stroke-dashoffset: 0;
+}
+.loc-map-card.is-expanded .loc-road-sec:nth-child(5) { transition-delay: 200ms; }
+.loc-map-card.is-expanded .loc-road-sec:nth-child(6) { transition-delay: 240ms; }
+.loc-map-card.is-expanded .loc-road-sec:nth-child(7) { transition-delay: 280ms; }
+.loc-map-card.is-expanded .loc-road-sec:nth-child(8) { transition-delay: 200ms; }
+.loc-map-card.is-expanded .loc-road-sec:nth-child(9) { transition-delay: 240ms; }
+.loc-map-card.is-expanded .loc-road-sec:nth-child(10){ transition-delay: 280ms; }
+.loc-map-card.is-expanded .loc-road-sec:nth-child(11){ transition-delay: 320ms; }
+
+/* Buildings scale in */
 .loc-building {
   position: absolute;
   border-radius: 3px;
@@ -2338,28 +2341,30 @@ h1 {
   border: 1px solid rgba(255,255,255,0.08);
   opacity: 0;
   transform: scale(0.8);
-  transition: opacity 0.4s ease, transform 0.4s cubic-bezier(0.34,1.56,0.64,1);
+  transition: opacity 350ms ease, transform 350ms cubic-bezier(0.34,1.56,0.64,1);
 }
 
 .loc-map-card.is-expanded .loc-building { opacity: 1; transform: scale(1); }
 .loc-map-card.is-expanded .loc-building:nth-child(1) { transition-delay: 300ms; }
-.loc-map-card.is-expanded .loc-building:nth-child(2) { transition-delay: 380ms; }
-.loc-map-card.is-expanded .loc-building:nth-child(3) { transition-delay: 440ms; }
-.loc-map-card.is-expanded .loc-building:nth-child(4) { transition-delay: 320ms; }
-.loc-map-card.is-expanded .loc-building:nth-child(5) { transition-delay: 400ms; }
-.loc-map-card.is-expanded .loc-building:nth-child(6) { transition-delay: 460ms; }
+.loc-map-card.is-expanded .loc-building:nth-child(2) { transition-delay: 360ms; }
+.loc-map-card.is-expanded .loc-building:nth-child(3) { transition-delay: 420ms; }
+.loc-map-card.is-expanded .loc-building:nth-child(4) { transition-delay: 330ms; }
+.loc-map-card.is-expanded .loc-building:nth-child(5) { transition-delay: 390ms; }
+.loc-map-card.is-expanded .loc-building:nth-child(6) { transition-delay: 450ms; }
 
+/* Pin drops in */
 .loc-map-pin {
   position: absolute;
   top: 50%; left: 50%;
-  transform: translate(-50%,-50%) scale(0) translateY(-20px);
-  transition: transform 0.5s cubic-bezier(0.34,1.56,0.64,1) 0.25s,
-              filter 0.5s ease 0.25s;
+  transform: translate(-50%, calc(-50% - 20px)) scale(0);
+  transition:
+    transform 500ms cubic-bezier(0.34,1.56,0.64,1) 250ms,
+    filter    400ms ease 250ms;
   z-index: 3;
 }
 
 .loc-map-card.is-expanded .loc-map-pin {
-  transform: translate(-50%,-50%) scale(1) translateY(0);
+  transform: translate(-50%, -50%) scale(1);
   filter: drop-shadow(0 0 10px rgba(52,211,153,0.5));
 }
 
@@ -2370,11 +2375,10 @@ h1 {
   pointer-events: none;
 }
 
+/* Info slides up */
 .loc-map-info {
   position: absolute;
-  bottom: 16px;
-  left: 18px;
-  right: 18px;
+  bottom: 16px; left: 18px; right: 18px;
   z-index: 4;
   opacity: 0;
   transform: translateY(8px);
@@ -2400,11 +2404,11 @@ h1 {
   font-family: ui-monospace, monospace;
 }
 
+/* Hint */
 .loc-map-hint {
   position: absolute;
-  bottom: -22px;
-  left: 50%;
-  transform: translateX(-50%);
+  bottom: -22px; left: 50%;
+  transform: translateX(-50%) translateY(4px);
   font-size: 0.7rem;
   color: var(--quiet);
   white-space: nowrap;
@@ -2415,12 +2419,10 @@ h1 {
 
 .loc-map-card:hover .loc-map-hint {
   opacity: 1;
-  transform: translateX(-50%) translateY(-2px);
+  transform: translateX(-50%) translateY(0);
 }
 
-.loc-map-card.is-expanded .loc-map-hint {
-  opacity: 0;
-}
+.loc-map-card.is-expanded .loc-map-hint { opacity: 0; }
 
 .loc-map-card:hover {
   border-color: rgba(52, 211, 153, 0.38);
