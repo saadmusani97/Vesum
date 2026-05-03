@@ -1483,7 +1483,7 @@ h1 {
     inset 0 1px 0 rgba(255, 255, 255, 0.1),
     0 32px 100px rgba(0, 0, 0, 0.3);
   backdrop-filter: blur(12px);
-  overflow: hidden;
+  overflow: visible; /* allow loc-map-card to expand beyond bounds */
 }
 
 /* Progress bar */
@@ -1582,6 +1582,7 @@ h1 {
 .wizard-body {
   position: relative;
   min-height: 380px;
+  overflow: visible;
 }
 
 .wizard-panel {
