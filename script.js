@@ -281,8 +281,24 @@ function skipSequenceHero() {
     hero.style.pointerEvents = "none";
   }
 
+  // Force all reveal elements visible immediately
+  document.querySelectorAll(".reveal").forEach((el) => el.classList.add("is-visible"));
+
   window.removeEventListener("scroll", requestScrollUpdate);
 }
+
+// ── Detect missing frames immediately ────────────────────────────
+// If the frames folder isn't deployed, skip the sequence right away
+// instead of waiting for onerror callbacks.
+(function detectFrames() {
+  const probe = new Image();
+  probe.onload = () => { /* frames exist — normal mode */ };
+  probe.onerror = () => skipSequenceHero();
+  // Short timeout fallback in case neither fires quickly
+  const timer = setTimeout(() => skipSequenceHero(), 2000);
+  probe.onload = () => clearTimeout(timer);
+  probe.src = frameUrl(0) + "?probe=1";
+})();
 
 function startMobileAutoplayFallback() {
   clearInterval(autoplayTimer);
@@ -510,6 +526,11 @@ window.addEventListener("resize", () => moveNavIndicator(currentPage));
 // Boot — show home immediately on first load (called after revealObserver is defined below)
 function bootApp() {
   showPage("home", true);
+  // Safety net: if next-section is still invisible after 2.5s, force skip
+  setTimeout(() => {
+    const nextOpacity = parseFloat(getComputedStyle(document.documentElement).getPropertyValue("--next-opacity")) || 0;
+    if (nextOpacity < 0.5) skipSequenceHero();
+  }, 2500);
 }
 
 function setupPixelText() {
