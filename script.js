@@ -10,7 +10,8 @@ const ctx    = canvas.getContext("2d", { alpha: false, desynchronized: true });
 ctx.imageSmoothingEnabled = false;
 
 const isMobile = window.matchMedia("(max-width: 720px)").matches;
-const stride   = isMobile ? 3 : 1;
+// stride 2 on desktop = 350 frames, stride 4 on mobile = 175 frames
+const stride   = isMobile ? 4 : 2;
 const totalDisplay = Math.ceil(frameConfig.totalFrames / stride);
 
 // ── Cache ─────────────────────────────────────────────────────────
@@ -18,8 +19,8 @@ const cache  = new Array(totalDisplay).fill(null);
 const loaded = new Uint8Array(totalDisplay);
 let loadedCount = 0;
 
-// How many frames must be ready before we unlock scrolling
-const READY_THRESHOLD = isMobile ? 60 : 150;
+// Unlock after just 60 frames — fast start
+const READY_THRESHOLD = isMobile ? 30 : 60;
 
 let sequenceReady   = false;
 let sequenceSkipped = false;
@@ -133,7 +134,7 @@ function resizeCanvas() {
 
 // ── Preload all frames ────────────────────────────────────────────
 function preloadAllFrames() {
-  const BATCH = isMobile ? 4 : 16;
+  const BATCH = isMobile ? 6 : 20;
   let nextToLoad = 0;
 
   function loadOne(i) {
