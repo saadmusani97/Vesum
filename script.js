@@ -1428,83 +1428,122 @@ document.querySelectorAll(".button").forEach((button) => {
 
 updateNavbar();
 
-// ── Location Map Card — 3D tilt + expand ────────────────────────
+// ── Location Map Card — spring 3D tilt + animated expand ─────────
 (function initLocMapCard() {
   const card = document.getElementById("locMapCard");
   if (!card) return;
 
   let isExpanded = false;
-  let tiltRaf = false;
-  let mx = 0, my = 0;
-  // Spring state
-  let rotX = 0, rotY = 0;
-  let velX = 0, velY = 0;
-  let targetX = 0, targetY = 0;
-  let animating = false;
+  let isHovered  = false;
 
-  function springTick() {
-    if (isExpanded) { animating = false; return; }
-    const stiffness = 0.18;
-    const damping = 0.72;
-    velX = velX * damping + (targetX - rotX) * stiffness;
-    velY = velY * damping + (targetY - rotY) * stiffness;
-    rotX += velX;
-    rotY += velY;
+  // Spring physics state
+  let rotX = 0, rotY = 0, velX = 0, velY = 0, tX = 0, tY = 0;
+  let springRaf = 0;
 
+  function springStep() {
+    if (isExpanded) { rotX = rotY = velX = velY = 0; card.style.transform = ""; springRaf = 0; return; }
+    const s = 0.22, d = 0.68;
+    velX = velX * d + (tX - rotX) * s;
+    velY = velY * d + (tY - rotY) * s;
+    rotX += velX; rotY += velY;
     card.style.transform = `rotateX(${rotX.toFixed(3)}deg) rotateY(${rotY.toFixed(3)}deg)`;
-
-    if (Math.abs(velX) > 0.01 || Math.abs(velY) > 0.01 ||
-        Math.abs(targetX - rotX) > 0.01 || Math.abs(targetY - rotY) > 0.01) {
-      requestAnimationFrame(springTick);
+    if (Math.abs(velX) > 0.005 || Math.abs(velY) > 0.005 || Math.abs(tX - rotX) > 0.005 || Math.abs(tY - rotY) > 0.005) {
+      springRaf = requestAnimationFrame(springStep);
     } else {
-      rotX = targetX;
-      rotY = targetY;
-      card.style.transform = `rotateX(${rotX}deg) rotateY(${rotY}deg)`;
-      animating = false;
+      card.style.transform = isExpanded ? "" : `rotateX(${tX}deg) rotateY(${tY}deg)`;
+      springRaf = 0;
     }
   }
 
-  function startSpring() {
-    if (!animating) {
-      animating = true;
-      requestAnimationFrame(springTick);
-    }
-  }
+  function startSpring() { if (!springRaf) springRaf = requestAnimationFrame(springStep); }
 
   card.addEventListener("pointermove", (e) => {
     if (isExpanded) return;
-    const rect = card.getBoundingClientRect();
-    const cx = rect.left + rect.width / 2;
-    const cy = rect.top + rect.height / 2;
-    const dx = e.clientX - cx;
-    const dy = e.clientY - cy;
-    targetY = (dx / (rect.width / 2)) * 8;
-    targetX = -(dy / (rect.height / 2)) * 8;
+    const r = card.getBoundingClientRect();
+    tY =  ((e.clientX - r.left - r.width  / 2) / (r.width  / 2)) * 8;
+    tX = -((e.clientY - r.top  - r.height / 2) / (r.height / 2)) * 8;
     startSpring();
   }, { passive: true });
 
-  card.addEventListener("pointerleave", () => {
+  card.addEventListener("pointerenter", () => {
     if (isExpanded) return;
-    targetX = 0;
-    targetY = 0;
+    isHovered = true;
+    card.querySelector(".loc-map-underline")?.classList.add("is-hovered");
+    card.querySelector(".loc-map-icon")?.classList.add("is-hovered");
+  });
+
+  card.addEventListener("pointerleave", () => {
+    isHovered = false;
+    tX = tY = 0;
     startSpring();
-  }, { passive: true });
+    card.querySelector(".loc-map-underline")?.classList.remove("is-hovered");
+    card.querySelector(".loc-map-icon")?.classList.remove("is-hovered");
+  });
 
   card.addEventListener("click", () => {
     isExpanded = !isExpanded;
+    tX = tY = 0;
+    card.style.transform = "";
     card.classList.toggle("is-expanded", isExpanded);
     card.setAttribute("aria-expanded", String(isExpanded));
-    // Clear inline transform so CSS transition can take over
-    card.style.transform = "";
-    rotX = 0; rotY = 0; velX = 0; velY = 0;
-    targetX = 0; targetY = 0;
+
+    if (isExpanded) {
+      // Animate roads drawing in
+      card.querySelectorAll(".loc-road-main, .loc-road-sec").forEach((line, i) => {
+        const len = line.getTotalLength?.() || 400;
+        line.style.strokeDasharray  = len;
+        line.style.strokeDashoffset = len;
+        line.style.transition = "none";
+        requestAnimationFrame(() => {
+          line.style.transition = `stroke-dashoffset ${0.6 + i * 0.06}s cubic-bezier(0.22,1,0.36,1) ${0.1 + i * 0.05}s`;
+          line.style.strokeDashoffset = "0";
+        });
+      });
+      // Animate buildings
+      card.querySelectorAll(".loc-building").forEach((b, i) => {
+        b.style.opacity   = "0";
+        b.style.transform = "scale(0.8)";
+        b.style.transition = "none";
+        setTimeout(() => {
+          b.style.transition = `opacity 0.4s ease ${0.4 + i * 0.08}s, transform 0.4s cubic-bezier(0.34,1.56,0.64,1) ${0.4 + i * 0.08}s`;
+          b.style.opacity   = "1";
+          b.style.transform = "scale(1)";
+        }, 20);
+      });
+      // Drop pin
+      const pin = card.querySelector(".loc-map-pin");
+      if (pin) {
+        pin.style.transform = "translate(-50%,-50%) scale(0) translateY(-20px)";
+        pin.style.transition = "none";
+        setTimeout(() => {
+          pin.style.transition = "transform 0.5s cubic-bezier(0.34,1.56,0.64,1) 0.25s, filter 0.5s ease 0.25s";
+          pin.style.transform  = "translate(-50%,-50%) scale(1) translateY(0)";
+          pin.style.filter     = "drop-shadow(0 0 10px rgba(52,211,153,0.5))";
+        }, 20);
+      }
+      // Show info
+      const info = card.querySelector(".loc-map-info");
+      if (info) {
+        info.style.opacity   = "0";
+        info.style.transform = "translateY(8px)";
+        info.style.transition = "none";
+        setTimeout(() => {
+          info.style.transition = "opacity 0.3s ease 0.35s, transform 0.3s ease 0.35s";
+          info.style.opacity   = "1";
+          info.style.transform = "translateY(0)";
+        }, 20);
+      }
+    } else {
+      // Reset roads
+      card.querySelectorAll(".loc-road-main, .loc-road-sec").forEach(line => {
+        line.style.transition = "none";
+        line.style.strokeDashoffset = line.style.strokeDasharray;
+      });
+    }
   });
 
   card.addEventListener("keydown", (e) => {
-    if (e.key === "Enter" || e.key === " ") {
-      e.preventDefault();
-      card.click();
-    }
+    if (e.key === "Enter" || e.key === " ") { e.preventDefault(); card.click(); }
   });
 })();
 
