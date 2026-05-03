@@ -68,11 +68,8 @@ let sequenceFinished = false;
 function snapToPlatform() {
   if (sequenceFinished) return;
   sequenceFinished = true;
-
   const platform = document.getElementById("platform");
   if (!platform) return;
-
-  // Smooth scroll to platform section
   platform.scrollIntoView({ behavior: "smooth", block: "start" });
 }
 
@@ -82,7 +79,11 @@ function updateFromScroll() {
   const rect = hero.getBoundingClientRect();
   const scrollable = hero.offsetHeight - window.innerHeight;
   const progress = scrollable > 0 ? clamp(-rect.top / scrollable, 0, 1) : 0;
-  targetDisplayIndex = Math.round(progress * (totalDisplay - 1));
+
+  // Only drive the sequence if frames are ready
+  if (sequenceReady) {
+    targetDisplayIndex = Math.round(progress * (totalDisplay - 1));
+  }
 
   const nextOpacity = clamp((progress - 0.88) / 0.12, 0, 1);
   const heroFade    = clamp(1 - Math.max(0, progress - 0.68) * 3.1, 0, 1);
@@ -96,8 +97,8 @@ function updateFromScroll() {
   root.style.setProperty("--next-opacity",     nextOpacity.toFixed(4));
   root.style.setProperty("--next-shift",       `${((1 - nextOpacity) * 28).toFixed(2)}px`);
 
-  // When sequence completes, snap to platform section — skip the dead gap
-  if (progress >= 0.98 && !sequenceFinished) {
+  // Snap to platform when sequence ends — skip the dead gap
+  if (sequenceReady && progress >= 0.97 && !sequenceFinished) {
     snapToPlatform();
   }
 }
@@ -171,16 +172,13 @@ function skipSequenceHero() {
   window.removeEventListener("scroll", requestScrollUpdate);
 }
 
-// ── Boot — NO blocking, site shows immediately ────────────────────
+// ── Boot — site shows immediately, frames load in background ─────
 resizeCanvas();
 window.addEventListener("scroll", requestScrollUpdate, { passive: true });
 window.addEventListener("resize", () => { resizeCanvas(); requestScrollUpdate(); });
 renderLoop();
 preloadAllFrames();
-// Set initial CSS vars so next-section is visible right away
-// Sequence will overlay on top once frames load
-document.documentElement.style.setProperty("--next-opacity", "1");
-document.documentElement.style.setProperty("--next-shift", "0px");
+// Force all content visible immediately — sequence overlays on top once ready
 document.querySelectorAll(".reveal").forEach(el => el.classList.add("is-visible"));
 
 const navbar = document.getElementById("navbar");

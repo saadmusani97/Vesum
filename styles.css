@@ -6,8 +6,8 @@
   --vignette-opacity: 1;
   --hero-opacity: 1;
   --hero-shift: 0px;
-  --next-opacity: 0;
-  --next-shift: 28px;
+  --next-opacity: 1;
+  --next-shift: 0px;
   --text: #f7fbff;
   --muted: rgba(226, 236, 247, 0.72);
   --quiet: rgba(226, 236, 247, 0.52);
