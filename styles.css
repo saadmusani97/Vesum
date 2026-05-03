@@ -2164,12 +2164,21 @@ h1 {
   cursor: pointer;
   margin: 20px auto 0;
   perspective: 1000px;
+  opacity: 0;
+  transform: translateY(24px) scale(0.96);
   transition:
     width 480ms cubic-bezier(0.22, 1, 0.36, 1),
     height 480ms cubic-bezier(0.22, 1, 0.36, 1),
     box-shadow 300ms ease,
-    border-color 300ms ease;
+    border-color 300ms ease,
+    opacity 500ms cubic-bezier(0.22, 1, 0.36, 1),
+    transform 500ms cubic-bezier(0.22, 1, 0.36, 1);
   will-change: transform, width, height;
+}
+
+.loc-map-card.is-card-visible {
+  opacity: 1;
+  transform: translateY(0) scale(1);
 }
 
 .loc-map-card:hover {
@@ -3682,8 +3691,7 @@ h1 {
 .db-vehicles-page {
   position: fixed;
   inset: 0;
-  z-index: 200;
-  z-index: 50;
+  z-index: 1000;
   background: rgba(2,4,7,0.98);
   backdrop-filter: blur(24px);
   padding: clamp(80px,10vh,120px) clamp(20px,5vw,72px) 48px;

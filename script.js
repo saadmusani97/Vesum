@@ -1179,6 +1179,16 @@ document.getElementById("paymentDoneBtn")?.addEventListener("click", () => {
     doneBtn.innerHTML = `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg> I've Paid`;
 
     goToWizardStep(4); // → confirmed
+
+    // Animate the loc-map-card entrance
+    setTimeout(() => {
+      const card = document.getElementById("locMapCard");
+      if (card) {
+        card.classList.remove("is-card-visible");
+        void card.offsetWidth; // force reflow
+        card.classList.add("is-card-visible");
+      }
+    }, 300);
   }, 900);
 });
 
