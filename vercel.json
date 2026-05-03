@@ -20,6 +20,10 @@
     {
       "src": "assets/**",
       "use": "@vercel/static"
+    },
+    {
+      "src": "frames/**",
+      "use": "@vercel/static"
     }
   ],
   "routes": [
@@ -28,6 +32,7 @@
     { "src": "/api/otp/verify", "dest": "/api/otp/verify.js" },
     { "src": "/api/booking/confirm", "dest": "/api/booking/confirm.js" },
     { "src": "/assets/(.*)", "dest": "/assets/$1" },
+    { "src": "/frames/(.*)", "dest": "/frames/$1" },
     { "src": "/styles.css", "dest": "/styles.css" },
     { "src": "/script.js", "dest": "/script.js" },
     { "src": "/(.*)", "dest": "/index.html" }
