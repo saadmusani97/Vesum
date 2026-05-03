@@ -1443,6 +1443,7 @@ updateNavbar();
   let animating = false;
 
   function springTick() {
+    if (isExpanded) { animating = false; return; }
     const stiffness = 0.18;
     const damping = 0.72;
     velX = velX * damping + (targetX - rotX) * stiffness;
@@ -1483,6 +1484,7 @@ updateNavbar();
   }, { passive: true });
 
   card.addEventListener("pointerleave", () => {
+    if (isExpanded) return;
     targetX = 0;
     targetY = 0;
     startSpring();
@@ -1491,12 +1493,11 @@ updateNavbar();
   card.addEventListener("click", () => {
     isExpanded = !isExpanded;
     card.classList.toggle("is-expanded", isExpanded);
-    card.setAttribute("aria-expanded", isExpanded);
-    // Reset tilt when expanded
-    if (isExpanded) {
-      targetX = 0; targetY = 0;
-      startSpring();
-    }
+    card.setAttribute("aria-expanded", String(isExpanded));
+    // Clear inline transform so CSS transition can take over
+    card.style.transform = "";
+    rotX = 0; rotY = 0; velX = 0; velY = 0;
+    targetX = 0; targetY = 0;
   });
 
   card.addEventListener("keydown", (e) => {
