@@ -10,14 +10,19 @@ const ctx    = canvas.getContext("2d", { alpha: false });
 ctx.imageSmoothingEnabled = false;
 
 const isMobile = window.matchMedia("(max-width: 720px)").matches;
-const stride   = isMobile ? 6 : 3;  // 200 frames desktop, 100 mobile
+// stride 3 = 200 display frames desktop, stride 6 = 100 mobile
+const stride       = isMobile ? 6 : 3;
 const totalDisplay = Math.ceil(frameConfig.totalFrames / stride);
 
 const cache  = new Array(totalDisplay).fill(null);
 const loaded = new Uint8Array(totalDisplay);
 
-let sequenceReady   = false;
-let sequenceSkipped = false;
+// Frames needed before unlocking scroll
+const READY_THRESHOLD = isMobile ? 40 : 100;
+
+let sequenceReady    = false;
+let sequenceSkipped  = false;
+let sequenceFinished = false;
 let targetDisplayIndex = 0;
 let lastDrawnIndex     = -1;
 let renderRaf = 0;
@@ -31,6 +36,38 @@ function frameUrl(displayIndex) {
 }
 
 function clamp(v, min, max) { return Math.min(Math.max(v, min), max); }
+
+// ── Loading overlay ───────────────────────────────────────────────
+const loaderEl = document.createElement("div");
+loaderEl.id = "vesumLoader";
+loaderEl.innerHTML = `
+  <div class="vl-inner">
+    <div class="vl-wordmark">VESUM</div>
+    <div class="vl-bar-track"><div class="vl-bar-fill" id="vlFill"></div></div>
+    <p class="vl-pct" id="vlPct">0%</p>
+  </div>`;
+document.body.appendChild(loaderEl);
+document.body.style.overflow = "hidden"; // block scroll until ready
+
+const vlFill = document.getElementById("vlFill");
+const vlPct  = document.getElementById("vlPct");
+let loaderGone = false;
+
+function updateLoader(n) {
+  const pct = Math.min(Math.round((n / READY_THRESHOLD) * 100), 100);
+  if (vlFill) vlFill.style.width = pct + "%";
+  if (vlPct)  vlPct.textContent  = pct + "%";
+}
+
+function hideLoader() {
+  if (loaderGone) return;
+  loaderGone = true;
+  loaderEl.classList.add("vl-out");
+  setTimeout(() => { try { loaderEl.remove(); } catch(_){} }, 700);
+  document.body.style.overflow = "";
+  document.querySelectorAll(".reveal").forEach(el => el.classList.add("is-visible"));
+  requestScrollUpdate();
+}
 
 // ── Draw ──────────────────────────────────────────────────────────
 function drawFrame(idx) {
@@ -52,7 +89,7 @@ function renderLoop() {
     if (!loaded[idx]) {
       let best = lastDrawnIndex >= 0 ? lastDrawnIndex : 0;
       let bestDist = Math.abs(best - idx);
-      for (let i = Math.max(0, idx - 20); i <= Math.min(totalDisplay - 1, idx + 20); i++) {
+      for (let i = Math.max(0, idx - 15); i <= Math.min(totalDisplay - 1, idx + 15); i++) {
         if (loaded[i] && Math.abs(i - idx) < bestDist) { best = i; bestDist = Math.abs(i - idx); }
       }
       idx = best;
@@ -63,14 +100,10 @@ function renderLoop() {
 }
 
 // ── Scroll ────────────────────────────────────────────────────────
-let sequenceFinished = false;
-
 function snapToPlatform() {
   if (sequenceFinished) return;
   sequenceFinished = true;
-  const platform = document.getElementById("platform");
-  if (!platform) return;
-  platform.scrollIntoView({ behavior: "smooth", block: "start" });
+  document.getElementById("platform")?.scrollIntoView({ behavior: "smooth", block: "start" });
 }
 
 function updateFromScroll() {
@@ -80,10 +113,7 @@ function updateFromScroll() {
   const scrollable = hero.offsetHeight - window.innerHeight;
   const progress = scrollable > 0 ? clamp(-rect.top / scrollable, 0, 1) : 0;
 
-  // Only drive the sequence if frames are ready
-  if (sequenceReady) {
-    targetDisplayIndex = Math.round(progress * (totalDisplay - 1));
-  }
+  if (sequenceReady) targetDisplayIndex = Math.round(progress * (totalDisplay - 1));
 
   const nextOpacity = clamp((progress - 0.88) / 0.12, 0, 1);
   const heroFade    = clamp(1 - Math.max(0, progress - 0.68) * 3.1, 0, 1);
@@ -97,10 +127,7 @@ function updateFromScroll() {
   root.style.setProperty("--next-opacity",     nextOpacity.toFixed(4));
   root.style.setProperty("--next-shift",       `${((1 - nextOpacity) * 28).toFixed(2)}px`);
 
-  // Snap to platform when sequence ends — skip the dead gap
-  if (sequenceReady && progress >= 0.97 && !sequenceFinished) {
-    snapToPlatform();
-  }
+  if (sequenceReady && progress >= 0.97 && !sequenceFinished) snapToPlatform();
 }
 
 function requestScrollUpdate() {
@@ -109,7 +136,7 @@ function requestScrollUpdate() {
 
 // ── Canvas resize ─────────────────────────────────────────────────
 function resizeCanvas() {
-  const dpr = Math.min(window.devicePixelRatio || 1, 1.5); // cap 1.5x saves GPU
+  const dpr = Math.min(window.devicePixelRatio || 1, 1.5);
   cssWidth  = window.innerWidth;
   cssHeight = window.innerHeight;
   canvas.width  = Math.floor(cssWidth  * dpr);
@@ -119,12 +146,11 @@ function resizeCanvas() {
   if (lastDrawnIndex >= 0) drawFrame(lastDrawnIndex);
 }
 
-// ── Preload frames — non-blocking ─────────────────────────────────
+// ── Preload ───────────────────────────────────────────────────────
 function preloadAllFrames() {
-  const BATCH = isMobile ? 3 : 6;  // lean — don't saturate network
-  let nextToLoad = 0;
+  const CONCURRENT = isMobile ? 4 : 8;
+  let nextToLoad  = 0;
   let loadedCount = 0;
-  const READY_THRESHOLD = isMobile ? 15 : 25;
 
   function loadOne(i) {
     if (i >= totalDisplay) return;
@@ -138,10 +164,11 @@ function preloadAllFrames() {
         cache[i] = bmp;
         loaded[i] = 1;
         loadedCount++;
+        updateLoader(loadedCount);
         if (!sequenceReady && loadedCount >= READY_THRESHOLD) {
           sequenceReady = true;
           drawFrame(0);
-          requestScrollUpdate();
+          hideLoader();
         }
         loadOne(nextToLoad++);
       });
@@ -153,7 +180,7 @@ function preloadAllFrames() {
     img.src = frameUrl(i);
   }
 
-  for (let i = 0; i < BATCH; i++) loadOne(nextToLoad++);
+  for (let i = 0; i < CONCURRENT; i++) loadOne(nextToLoad++);
 }
 
 // ── No-frames fallback ────────────────────────────────────────────
@@ -161,6 +188,8 @@ function skipSequenceHero() {
   if (sequenceSkipped) return;
   sequenceSkipped = true;
   cancelAnimationFrame(renderRaf);
+  try { loaderEl.remove(); } catch(_) {}
+  document.body.style.overflow = "";
   const root = document.documentElement;
   root.style.setProperty("--progress",         "1");
   root.style.setProperty("--meter-height",     "100%");
@@ -175,14 +204,12 @@ function skipSequenceHero() {
   window.removeEventListener("scroll", requestScrollUpdate);
 }
 
-// ── Boot — site shows immediately, frames load in background ─────
+// ── Boot ──────────────────────────────────────────────────────────
 resizeCanvas();
 window.addEventListener("scroll", requestScrollUpdate, { passive: true });
 window.addEventListener("resize", () => { resizeCanvas(); requestScrollUpdate(); });
 renderLoop();
 preloadAllFrames();
-// Force all content visible immediately — sequence overlays on top once ready
-document.querySelectorAll(".reveal").forEach(el => el.classList.add("is-visible"));
 
 const navbar = document.getElementById("navbar");
 const navIndicator = document.querySelector(".nav-indicator");
