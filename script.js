@@ -1428,49 +1428,126 @@ document.querySelectorAll(".button").forEach((button) => {
 
 updateNavbar();
 
-// ── Location Map Card — spring 3D tilt + CSS expand ──────────────
+// ── Location Map Card — tilt only, click opens modal ─────────────
 (function initLocMapCard() {
   const card = document.getElementById("locMapCard");
   if (!card) return;
 
-  let isExpanded = false;
-  let rotX = 0, rotY = 0, velX = 0, velY = 0, tX = 0, tY = 0;
-  let raf = 0;
-
+  // Spring tilt
+  let rotX = 0, rotY = 0, velX = 0, velY = 0, tX = 0, tY = 0, raf = 0;
   function spring() {
-    if (isExpanded) { card.style.transform = ""; raf = 0; return; }
     velX = velX * 0.68 + (tX - rotX) * 0.22;
     velY = velY * 0.68 + (tY - rotY) * 0.22;
     rotX += velX; rotY += velY;
     card.style.transform = `rotateX(${rotX.toFixed(2)}deg) rotateY(${rotY.toFixed(2)}deg)`;
-    if (Math.abs(velX) > 0.01 || Math.abs(velY) > 0.01 || Math.abs(tX-rotX) > 0.01 || Math.abs(tY-rotY) > 0.01) {
+    if (Math.abs(velX) > 0.01 || Math.abs(velY) > 0.01 || Math.abs(tX-rotX) > 0.01 || Math.abs(tY-rotY) > 0.01)
       raf = requestAnimationFrame(spring);
-    } else { card.style.transform = ""; raf = 0; }
+    else { card.style.transform = ""; raf = 0; }
   }
-
   card.addEventListener("pointermove", e => {
-    if (isExpanded) return;
     const r = card.getBoundingClientRect();
     tY =  ((e.clientX - r.left - r.width/2)  / (r.width/2))  * 8;
     tX = -((e.clientY - r.top  - r.height/2) / (r.height/2)) * 8;
     if (!raf) raf = requestAnimationFrame(spring);
   }, { passive: true });
-
   card.addEventListener("pointerleave", () => {
     tX = tY = 0;
     if (!raf) raf = requestAnimationFrame(spring);
   }, { passive: true });
 
-  card.addEventListener("click", () => {
-    isExpanded = !isExpanded;
-    tX = tY = 0; rotX = rotY = velX = velY = 0;
-    card.style.transform = "";
-    card.classList.toggle("is-expanded", isExpanded);
+  // Click → open map modal
+  card.addEventListener("click", openMapModal);
+  card.addEventListener("keydown", e => {
+    if (e.key === "Enter" || e.key === " ") { e.preventDefault(); openMapModal(); }
   });
 
-  card.addEventListener("keydown", e => {
-    if (e.key === "Enter" || e.key === " ") { e.preventDefault(); card.click(); }
-  });
+  function openMapModal() {
+    // Reset tilt
+    tX = tY = 0; rotX = rotY = velX = velY = 0;
+    card.style.transform = "";
+
+    const locName   = document.getElementById("locMapInfoName")?.textContent || document.getElementById("locMapName")?.textContent || "Selected Society";
+    const locCoords = document.getElementById("locMapCoords")?.textContent   || "Mumbai, Maharashtra";
+
+    // Build modal
+    const modal = document.createElement("div");
+    modal.id = "locMapModal";
+    modal.innerHTML = `
+      <div class="lmm-backdrop"></div>
+      <div class="lmm-card" role="dialog" aria-modal="true" aria-label="Parking location map">
+        <button class="lmm-close" aria-label="Close">&times;</button>
+        <div class="lmm-map">
+          <div class="lmm-bg"></div>
+          <svg class="lmm-roads" viewBox="0 0 400 300" preserveAspectRatio="none">
+            <line x1="0" y1="105" x2="400" y2="105" class="lmm-road-main" stroke-width="5"/>
+            <line x1="0" y1="195" x2="400" y2="195" class="lmm-road-main" stroke-width="5"/>
+            <line x1="120" y1="0" x2="120" y2="300" class="lmm-road-main" stroke-width="4"/>
+            <line x1="280" y1="0" x2="280" y2="300" class="lmm-road-main" stroke-width="4"/>
+            <line x1="0" y1="60"  x2="400" y2="60"  class="lmm-road-sec"/>
+            <line x1="0" y1="150" x2="400" y2="150" class="lmm-road-sec"/>
+            <line x1="0" y1="240" x2="400" y2="240" class="lmm-road-sec"/>
+            <line x1="60"  y1="0" x2="60"  y2="300" class="lmm-road-sec"/>
+            <line x1="180" y1="0" x2="180" y2="300" class="lmm-road-sec"/>
+            <line x1="220" y1="0" x2="220" y2="300" class="lmm-road-sec"/>
+            <line x1="340" y1="0" x2="340" y2="300" class="lmm-road-sec"/>
+          </svg>
+          <div class="lmm-building" style="top:38%;left:8%;width:14%;height:22%"></div>
+          <div class="lmm-building" style="top:12%;left:33%;width:13%;height:16%"></div>
+          <div class="lmm-building" style="top:68%;left:72%;width:19%;height:19%"></div>
+          <div class="lmm-building" style="top:18%;right:8%;width:11%;height:26%"></div>
+          <div class="lmm-building" style="top:52%;left:4%;width:9%;height:13%"></div>
+          <div class="lmm-building" style="top:6%;left:73%;width:15%;height:11%"></div>
+          <div class="lmm-pin">
+            <svg width="36" height="36" viewBox="0 0 24 24" fill="none">
+              <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z" fill="#34d399"/>
+              <circle cx="12" cy="9" r="2.5" fill="#020407"/>
+            </svg>
+          </div>
+          <div class="lmm-fade"></div>
+        </div>
+        <div class="lmm-info">
+          <div class="lmm-live"><span class="lmm-dot"></span><span>Live</span></div>
+          <p class="lmm-name">${locName}</p>
+          <p class="lmm-coords">${locCoords}</p>
+        </div>
+      </div>`;
+    document.body.appendChild(modal);
+
+    // Animate in
+    requestAnimationFrame(() => {
+      modal.classList.add("lmm-open");
+      // Roads draw
+      modal.querySelectorAll(".lmm-road-main, .lmm-road-sec").forEach((l, i) => {
+        const len = 500;
+        l.style.strokeDasharray  = len;
+        l.style.strokeDashoffset = len;
+        setTimeout(() => {
+          l.style.transition = `stroke-dashoffset ${0.7 + i * 0.05}s cubic-bezier(0.22,1,0.36,1)`;
+          l.style.strokeDashoffset = "0";
+        }, 150 + i * 40);
+      });
+      // Buildings
+      modal.querySelectorAll(".lmm-building").forEach((b, i) => {
+        setTimeout(() => b.classList.add("lmm-in"), 300 + i * 70);
+      });
+      // Pin
+      setTimeout(() => modal.querySelector(".lmm-pin")?.classList.add("lmm-in"), 280);
+      // Info
+      setTimeout(() => modal.querySelector(".lmm-info")?.classList.add("lmm-in"), 400);
+    });
+
+    // Close handlers
+    function close() {
+      modal.classList.remove("lmm-open");
+      modal.classList.add("lmm-out");
+      setTimeout(() => modal.remove(), 400);
+    }
+    modal.querySelector(".lmm-close").addEventListener("click", close);
+    modal.querySelector(".lmm-backdrop").addEventListener("click", close);
+    document.addEventListener("keydown", function esc(e) {
+      if (e.key === "Escape") { close(); document.removeEventListener("keydown", esc); }
+    });
+  }
 })();
 
 // ── Vehicles Sub-Page ────────────────────────────────────────────
