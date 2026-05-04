@@ -8,6 +8,15 @@
     { "src": "assets/**", "use": "@vercel/static" },
     { "src": "frames/**", "use": "@vercel/static" }
   ],
+  "headers": [
+    {
+      "source": "/(index\\.html|script\\.js|styles\\.css)",
+      "headers": [
+        { "key": "Cache-Control", "value": "no-cache, no-store, must-revalidate" },
+        { "key": "Pragma", "value": "no-cache" }
+      ]
+    }
+  ],
   "routes": [
     { "src": "/api/locations", "dest": "/api/locations.js" },
     { "src": "/api/otp/send", "dest": "/api/otp/send.js" },
