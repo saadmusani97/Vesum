@@ -2159,11 +2159,8 @@ h1 {
 #locMapModal {
   position: fixed;
   inset: 0;
-  z-index: 2000;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 20px;
+  z-index: 9999;
+  pointer-events: auto;
 }
 
 .lmm-backdrop {
@@ -2180,21 +2177,13 @@ h1 {
 #locMapModal.lmm-out  .lmm-backdrop { opacity: 0; }
 
 .lmm-card {
-  position: relative;
   z-index: 1;
-  width: min(400px, 100%);
   border-radius: 20px;
   border: 1px solid rgba(52,211,153,0.25);
   background: #0d1a14;
   overflow: hidden;
   box-shadow: 0 40px 120px rgba(0,0,0,0.6), 0 0 60px rgba(52,211,153,0.08);
-  opacity: 0;
-  transform: scale(0.88) translateY(24px);
-  transition: opacity 400ms cubic-bezier(0.22,1,0.36,1), transform 400ms cubic-bezier(0.34,1.4,0.64,1);
 }
-
-#locMapModal.lmm-open .lmm-card { opacity: 1; transform: scale(1) translateY(0); }
-#locMapModal.lmm-out  .lmm-card { opacity: 0; transform: scale(0.92) translateY(16px); }
 
 .lmm-close {
   position: absolute;
