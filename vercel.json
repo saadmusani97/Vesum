@@ -1,40 +1,16 @@
 {
   "version": 2,
-  "builds": [
-    {
-      "src": "api/**/*.js",
-      "use": "@vercel/node"
-    },
-    {
-      "src": "index.html",
-      "use": "@vercel/static"
-    },
-    {
-      "src": "styles.css",
-      "use": "@vercel/static"
-    },
-    {
-      "src": "script.js",
-      "use": "@vercel/static"
-    },
-    {
-      "src": "assets/**",
-      "use": "@vercel/static"
-    },
-    {
-      "src": "frames/**",
-      "use": "@vercel/static"
+  "functions": {
+    "api/**/*.js": {
+      "runtime": "@vercel/node@3"
     }
-  ],
+  },
   "routes": [
     { "src": "/api/locations", "dest": "/api/locations.js" },
     { "src": "/api/otp/send", "dest": "/api/otp/send.js" },
     { "src": "/api/otp/verify", "dest": "/api/otp/verify.js" },
     { "src": "/api/booking/confirm", "dest": "/api/booking/confirm.js" },
-    { "src": "/assets/(.*)", "dest": "/assets/$1" },
-    { "src": "/frames/(.*)", "dest": "/frames/$1" },
-    { "src": "/styles.css", "dest": "/styles.css" },
-    { "src": "/script.js", "dest": "/script.js" },
+    { "handle": "filesystem" },
     { "src": "/(.*)", "dest": "/index.html" }
   ]
 }
