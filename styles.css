@@ -4865,3 +4865,259 @@ h1 {
   .sp-table-head span:nth-child(3),
   .sp-row span:nth-child(3) { display: none; }
 }
+
+/* ── Admin Navbar Button ─────────────────────────────────────────── */
+
+.nav-right {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.nav-admin-btn {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 14px;
+  border-radius: 8px;
+  background: rgba(255,255,255,0.06);
+  border: 1px solid rgba(255,255,255,0.12);
+  color: var(--muted);
+  font-size: 0.82rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background 180ms ease, color 180ms ease, border-color 180ms ease;
+}
+
+.nav-admin-btn:hover {
+  background: rgba(255,255,255,0.1);
+  color: var(--text);
+}
+
+.nav-admin-btn.is-logged-in {
+  background: rgba(70,217,255,0.1);
+  border-color: rgba(70,217,255,0.3);
+  color: var(--cyan);
+}
+
+/* ── Admin Login Modal ───────────────────────────────────────────── */
+
+#adminLoginModal {
+  opacity: 0;
+  transition: opacity 300ms ease;
+}
+
+.adm-login-card {
+  position: relative;
+  width: min(380px, calc(100vw - 40px));
+  background: rgba(10,18,30,0.95);
+  border: 1px solid rgba(255,255,255,0.12);
+  border-radius: 20px;
+  padding: 40px 36px 36px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  box-shadow: 0 40px 120px rgba(0,0,0,0.6);
+  animation: admCardIn 400ms cubic-bezier(0.34,1.4,0.64,1) both;
+}
+
+@keyframes admCardIn {
+  from { opacity: 0; transform: scale(0.9) translateY(16px); }
+  to   { opacity: 1; transform: scale(1) translateY(0); }
+}
+
+.adm-close {
+  position: absolute;
+  top: 14px; right: 14px;
+  width: 30px; height: 30px;
+  border-radius: 999px;
+  background: rgba(255,255,255,0.07);
+  border: 1px solid rgba(255,255,255,0.1);
+  color: var(--muted);
+  font-size: 1.1rem;
+  cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  transition: background 180ms ease;
+}
+.adm-close:hover { background: rgba(255,255,255,0.14); color: var(--text); }
+
+.adm-login-icon {
+  width: 56px; height: 56px;
+  border-radius: 14px;
+  background: rgba(70,217,255,0.1);
+  border: 1px solid rgba(70,217,255,0.2);
+  display: flex; align-items: center; justify-content: center;
+  color: var(--cyan);
+  margin-bottom: 4px;
+}
+
+.adm-login-title {
+  margin: 0;
+  font-size: 1.3rem;
+  font-weight: 820;
+  color: var(--text);
+}
+
+.adm-login-sub {
+  margin: 0;
+  font-size: 0.88rem;
+  color: var(--quiet);
+}
+
+.adm-login-input {
+  width: 100%;
+  min-height: 50px;
+  border: 1px solid rgba(255,255,255,0.15);
+  border-radius: 10px;
+  background: rgba(255,255,255,0.05);
+  color: var(--text);
+  padding: 0 16px;
+  font-size: 1rem;
+  outline: 0;
+  margin-top: 8px;
+  transition: border-color 200ms ease, box-shadow 200ms ease;
+}
+.adm-login-input:focus {
+  border-color: rgba(70,217,255,0.5);
+  box-shadow: 0 0 0 3px rgba(70,217,255,0.12);
+}
+.adm-login-input.is-error {
+  border-color: rgba(248,113,113,0.6);
+  box-shadow: 0 0 0 3px rgba(248,113,113,0.12);
+  animation: shake 300ms ease;
+}
+
+@keyframes shake {
+  0%,100% { transform: translateX(0); }
+  25%      { transform: translateX(-6px); }
+  75%      { transform: translateX(6px); }
+}
+
+.adm-login-error {
+  margin: 0;
+  font-size: 0.82rem;
+  color: #f87171;
+  min-height: 18px;
+}
+
+.adm-login-btn { width: 100%; min-height: 50px; margin-top: 4px; }
+
+/* ── Admin Panel ─────────────────────────────────────────────────── */
+
+.adm-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  width: min(1120px, 100%);
+  margin: 0 auto 36px;
+}
+
+.adm-kicker {
+  margin: 0 0 6px;
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: var(--cyan);
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+}
+
+.adm-title {
+  margin: 0;
+  font-size: clamp(1.6rem, 3vw, 2.4rem);
+  font-weight: 860;
+}
+
+.adm-stats {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 16px;
+  width: min(1120px, 100%);
+  margin: 0 auto 32px;
+}
+
+.adm-stat-card {
+  background: rgba(255,255,255,0.04);
+  border: 1px solid rgba(255,255,255,0.08);
+  border-radius: 16px;
+  padding: 22px 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  transition: border-color 200ms ease, transform 200ms ease;
+}
+.adm-stat-card:hover { border-color: rgba(70,217,255,0.2); transform: translateY(-3px); }
+
+.adm-stat-label {
+  margin: 0;
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: var(--quiet);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+.adm-stat-num {
+  font-size: 1.8rem;
+  font-weight: 860;
+  color: var(--text);
+  line-height: 1;
+}
+
+.adm-stat-sub {
+  font-size: 0.78rem;
+  font-weight: 600;
+}
+
+.adm-charts {
+  display: grid;
+  grid-template-columns: 1.4fr 1fr;
+  gap: 20px;
+  width: min(1120px, 100%);
+  margin: 0 auto 28px;
+}
+
+.adm-chart-card {
+  background: rgba(255,255,255,0.04);
+  border: 1px solid rgba(255,255,255,0.08);
+  border-radius: 16px;
+  padding: 24px;
+  height: 280px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.adm-chart-title {
+  margin: 0;
+  font-size: 0.9rem;
+  font-weight: 760;
+  color: var(--muted);
+  flex-shrink: 0;
+}
+
+.adm-chart-card canvas { flex: 1; min-height: 0; }
+
+.adm-table-card {
+  width: min(1120px, 100%);
+  margin: 0 auto;
+  background: rgba(255,255,255,0.03);
+  border: 1px solid rgba(255,255,255,0.08);
+  border-radius: 16px;
+  overflow: hidden;
+}
+
+.adm-table-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 18px 20px;
+  border-bottom: 1px solid rgba(255,255,255,0.07);
+}
+
+.adm-table-header h4 { margin: 0; font-size: 0.92rem; font-weight: 760; }
+
+@media (max-width: 900px) {
+  .adm-stats  { grid-template-columns: repeat(2, 1fr); }
+  .adm-charts { grid-template-columns: 1fr; }
+}

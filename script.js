@@ -1852,3 +1852,176 @@ function populateOtp() {
       <span>${statusBadge(o.status)}</span>
     </div>`).join("");
 }
+
+// ── Admin Panel ───────────────────────────────────────────────────
+const ADMIN_PASS = "saad";
+let adminLoggedIn = false;
+let admCharts = {};
+
+window.openAdminLogin = function() {
+  if (adminLoggedIn) { openAdminPanel(); return; }
+  const modal = document.getElementById("adminLoginModal");
+  if (!modal) return;
+  modal.style.display = "flex";
+  requestAnimationFrame(() => modal.style.opacity = "1");
+  setTimeout(() => document.getElementById("adminPassInput")?.focus(), 100);
+};
+
+window.closeAdminLogin = function() {
+  const modal = document.getElementById("adminLoginModal");
+  if (!modal) return;
+  modal.style.opacity = "0";
+  setTimeout(() => { modal.style.display = "none"; }, 300);
+  const err = document.getElementById("adminLoginError");
+  if (err) err.textContent = "";
+};
+
+window.submitAdminLogin = function() {
+  const input = document.getElementById("adminPassInput");
+  const err   = document.getElementById("adminLoginError");
+  if (!input) return;
+  if (input.value === ADMIN_PASS) {
+    adminLoggedIn = true;
+    closeAdminLogin();
+    // Update navbar button
+    const label = document.getElementById("navAdminLabel");
+    if (label) label.textContent = "SA";
+    const btn = document.getElementById("navAdminBtn");
+    if (btn) btn.classList.add("is-logged-in");
+    openAdminPanel();
+  } else {
+    if (err) {
+      err.textContent = "⚠ Incorrect password";
+      input.classList.add("is-error");
+      setTimeout(() => { input.classList.remove("is-error"); input.value = ""; }, 1200);
+    }
+  }
+};
+
+function openAdminPanel() {
+  const panel = document.getElementById("adminPanel");
+  if (!panel) return;
+  panel.style.display = "block";
+  document.body.style.overflow = "hidden";
+  requestAnimationFrame(() => {
+    panel.style.opacity = "1";
+    panel.style.transform = "translateY(0)";
+  });
+  populateAdminPanel();
+}
+
+window.closeAdminPanel = function() {
+  const panel = document.getElementById("adminPanel");
+  if (!panel) return;
+  panel.style.opacity = "0";
+  panel.style.transform = "translateY(24px)";
+  document.body.style.overflow = "";
+  setTimeout(() => { panel.style.display = "none"; }, 400);
+};
+
+function populateAdminPanel() {
+  // Animate stat counters
+  function countUp(el, target, prefix, suffix, duration) {
+    const start = performance.now();
+    function tick(now) {
+      const p = Math.min((now - start) / duration, 1);
+      const ease = 1 - Math.pow(1 - p, 3);
+      el.textContent = prefix + Math.round(ease * target).toLocaleString("en-IN") + suffix;
+      if (p < 1) requestAnimationFrame(tick);
+    }
+    requestAnimationFrame(tick);
+  }
+
+  const revEl = document.getElementById("admRevNum");
+  const bkEl  = document.getElementById("admBookNum");
+  const scEl  = document.getElementById("admSocNum");
+  const otEl  = document.getElementById("admOtpNum");
+
+  if (revEl) countUp(revEl, totalRevenue, "INR ", "", 1200);
+  if (bkEl)  countUp(bkEl,  2840,         "",    "", 1000);
+  if (scEl)  countUp(scEl,  128,           "",    "", 900);
+  if (otEl)  countUp(otEl,  99,            "",    "%", 800);
+
+  // Transactions list
+  const list = document.getElementById("admTransList");
+  if (list) {
+    list.innerHTML = revenueTransactions.slice(0, 10).map((tx, i) => `
+      <div class="sp-row" style="grid-template-columns:2fr 1fr 1.2fr 1fr;animation-delay:${i*40}ms">
+        <span>${tx.society}</span>
+        <span style="color:var(--cyan);font-weight:700">INR ${tx.amount}</span>
+        <span>${fmtTime(tx.time)}, ${fmtDate(tx.time)}</span>
+        <span>${statusBadge(tx.status)}</span>
+      </div>`).join("");
+  }
+
+  // Charts — destroy old ones first
+  if (admCharts.revenue) { admCharts.revenue.destroy(); admCharts.revenue = null; }
+  if (admCharts.bookings) { admCharts.bookings.destroy(); admCharts.bookings = null; }
+
+  if (typeof Chart === "undefined") return;
+
+  const chartDefaults = {
+    responsive: true,
+    maintainAspectRatio: false,
+    plugins: { legend: { display: false } },
+    scales: {
+      x: { grid: { color: "rgba(255,255,255,0.05)" }, ticks: { color: "rgba(226,236,247,0.52)", font: { size: 11 } } },
+      y: { grid: { color: "rgba(255,255,255,0.05)" }, ticks: { color: "rgba(226,236,247,0.52)", font: { size: 11 } } },
+    },
+  };
+
+  // Revenue line chart — last 7 days
+  const days = ["Mon","Tue","Wed","Thu","Fri","Sat","Sun"];
+  const revData = days.map(() => rnd(8000, 18000));
+  const revCtx = document.getElementById("admRevenueChart");
+  if (revCtx) {
+    admCharts.revenue = new Chart(revCtx, {
+      type: "line",
+      data: {
+        labels: days,
+        datasets: [{
+          data: revData,
+          borderColor: "#46d9ff",
+          backgroundColor: "rgba(70,217,255,0.08)",
+          borderWidth: 2,
+          pointBackgroundColor: "#46d9ff",
+          pointRadius: 4,
+          tension: 0.4,
+          fill: true,
+        }],
+      },
+      options: { ...chartDefaults, animation: { duration: 1000, easing: "easeOutQuart" } },
+    });
+  }
+
+  // Bookings doughnut chart — by society
+  const topSocieties = societies.slice(0, 5);
+  const bkData = topSocieties.map(() => rnd(200, 800));
+  const bkCtx = document.getElementById("admBookingsChart");
+  if (bkCtx) {
+    admCharts.bookings = new Chart(bkCtx, {
+      type: "doughnut",
+      data: {
+        labels: topSocieties,
+        datasets: [{
+          data: bkData,
+          backgroundColor: ["#46d9ff","#a855f7","#4ade80","#f472b6","#fb923c"],
+          borderWidth: 0,
+          hoverOffset: 8,
+        }],
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+          legend: {
+            display: true,
+            position: "bottom",
+            labels: { color: "rgba(226,236,247,0.72)", font: { size: 11 }, padding: 12 },
+          },
+        },
+        animation: { duration: 1000, easing: "easeOutQuart" },
+      },
+    });
+  }
+}
