@@ -816,5 +816,25 @@
     ></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"></script>
     <script src="./script.js"></script>
+    <script>
+    // Guaranteed fallback — define map modal opener if script.js failed to set it
+    if (!window._openLocMapModal) {
+      window._openLocMapModal = function() {
+        var existing = document.getElementById('locMapModal');
+        if (existing) existing.remove();
+        var locName = (document.getElementById('locMapInfoName') || {}).textContent || (document.getElementById('locMapName') || {}).textContent || 'Selected Society';
+        var locCoords = (document.getElementById('locMapCoords') || {}).textContent || 'Mumbai, Maharashtra';
+        var m = document.createElement('div');
+        m.id = 'locMapModal';
+        m.innerHTML = '<div class="lmm-backdrop"></div><div class="lmm-card" role="dialog"><button class="lmm-close">&times;</button><div class="lmm-map"><div class="lmm-bg"></div><svg class="lmm-roads" viewBox="0 0 400 300" preserveAspectRatio="none"><line x1="0" y1="105" x2="400" y2="105" class="lmm-road-main" stroke-width="5"/><line x1="0" y1="195" x2="400" y2="195" class="lmm-road-main" stroke-width="5"/><line x1="120" y1="0" x2="120" y2="300" class="lmm-road-main" stroke-width="4"/><line x1="280" y1="0" x2="280" y2="300" class="lmm-road-main" stroke-width="4"/><line x1="0" y1="60" x2="400" y2="60" class="lmm-road-sec"/><line x1="0" y1="150" x2="400" y2="150" class="lmm-road-sec"/><line x1="0" y1="240" x2="400" y2="240" class="lmm-road-sec"/><line x1="60" y1="0" x2="60" y2="300" class="lmm-road-sec"/><line x1="180" y1="0" x2="180" y2="300" class="lmm-road-sec"/><line x1="220" y1="0" x2="220" y2="300" class="lmm-road-sec"/><line x1="340" y1="0" x2="340" y2="300" class="lmm-road-sec"/></svg><div class="lmm-building" style="top:38%;left:8%;width:14%;height:22%"></div><div class="lmm-building" style="top:12%;left:33%;width:13%;height:16%"></div><div class="lmm-building" style="top:68%;left:72%;width:19%;height:19%"></div><div class="lmm-building" style="top:18%;right:8%;width:11%;height:26%"></div><div class="lmm-pin"><svg width="36" height="36" viewBox="0 0 24 24" fill="none"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z" fill="#34d399"/><circle cx="12" cy="9" r="2.5" fill="#020407"/></svg></div><div class="lmm-fade"></div></div><div class="lmm-info"><div class="lmm-live"><span class="lmm-dot"></span><span>Live</span></div><p class="lmm-name">'+locName+'</p><p class="lmm-coords">'+locCoords+'</p></div></div>';
+        document.body.appendChild(m);
+        requestAnimationFrame(function(){ m.classList.add('lmm-open'); });
+        function close(){ m.classList.remove('lmm-open'); m.classList.add('lmm-out'); setTimeout(function(){ m.remove(); }, 400); }
+        m.querySelector('.lmm-close').onclick = close;
+        m.querySelector('.lmm-backdrop').onclick = close;
+        document.addEventListener('keydown', function esc(e){ if(e.key==='Escape'){ close(); document.removeEventListener('keydown',esc); } });
+      };
+    }
+    </script>
   </body>
 </html>
