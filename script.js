@@ -29,6 +29,7 @@ let renderRaf = 0;
 let raf       = 0;
 let cssWidth  = 0;
 let cssHeight = 0;
+let loaderTimeout = 0;
 
 function frameUrl(displayIndex) {
   const realIndex = Math.min(displayIndex * stride, frameConfig.totalFrames - 1);
@@ -62,6 +63,10 @@ function updateLoader(n) {
 function hideLoader() {
   if (loaderGone) return;
   loaderGone = true;
+  if (loaderTimeout) {
+    clearTimeout(loaderTimeout);
+    loaderTimeout = 0;
+  }
   loaderEl.classList.add("vl-out");
   setTimeout(() => { try { loaderEl.remove(); } catch(_){} }, 700);
   document.body.style.overflow = "";
@@ -157,21 +162,36 @@ function preloadAllFrames() {
     const img = new Image();
     img.decoding = "async";
     img.onload = () => {
-      (typeof createImageBitmap !== "undefined"
+      const decode = typeof createImageBitmap !== "undefined"
         ? createImageBitmap(img)
-        : Promise.resolve(img)
-      ).then(bmp => {
-        cache[i] = bmp;
-        loaded[i] = 1;
-        loadedCount++;
-        updateLoader(loadedCount);
-        if (!sequenceReady && loadedCount >= READY_THRESHOLD) {
-          sequenceReady = true;
-          drawFrame(0);
-          hideLoader();
-        }
-        loadOne(nextToLoad++);
-      });
+        : Promise.resolve(img);
+
+      decode
+        .then((bmp) => {
+          cache[i] = bmp;
+          loaded[i] = 1;
+          loadedCount++;
+          updateLoader(loadedCount);
+          if (!sequenceReady && loadedCount >= READY_THRESHOLD) {
+            sequenceReady = true;
+            drawFrame(0);
+            hideLoader();
+          }
+        })
+        .catch(() => {
+          cache[i] = img;
+          loaded[i] = 1;
+          loadedCount++;
+          updateLoader(loadedCount);
+          if (!sequenceReady && loadedCount >= READY_THRESHOLD) {
+            sequenceReady = true;
+            drawFrame(0);
+            hideLoader();
+          }
+        })
+        .finally(() => {
+          loadOne(nextToLoad++);
+        });
     };
     img.onerror = () => {
       if (i === 0) { skipSequenceHero(); return; }
@@ -181,6 +201,13 @@ function preloadAllFrames() {
   }
 
   for (let i = 0; i < CONCURRENT; i++) loadOne(nextToLoad++);
+
+  // Safety net: never leave the app blocked on the loading overlay.
+  loaderTimeout = window.setTimeout(() => {
+    if (!loaderGone) {
+      skipSequenceHero();
+    }
+  }, 8000);
 }
 
 // ── No-frames fallback ────────────────────────────────────────────
