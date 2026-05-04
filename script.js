@@ -1181,6 +1181,13 @@ document.getElementById("paymentDoneBtn")?.addEventListener("click", () => {
 
     goToWizardStep(4); // → confirmed
 
+    // ── Add transaction to revenue panel ──────────────────────────
+    window._addRevenueTransaction({
+      society: onboardingState.selectedLocation?.name || "Unknown",
+      amount:  onboardingState.paymentAmount,
+      phone:   onboardingState.phone,
+    });
+
     // Trigger loc-map-card entrance animation
     const card = document.getElementById("locMapCard");
     if (card) {
@@ -1621,3 +1628,200 @@ updateNavbar();
     timerInterval = setInterval(tick, 30000);
   }
 })()();
+
+// ── Stat Detail Panels ────────────────────────────────────────────
+
+const societies = [
+  "Shanti Vihar CHS","Gokul Residency","Sai Darshan Heights",
+  "Lakeview CHS","Green Meadows Society","Palm Grove Apartments",
+  "Lotus Enclave","Sunrise CHS",
+];
+
+function rnd(min, max) { return Math.floor(Math.random() * (max - min + 1)) + min; }
+function fmtTime(d) {
+  return d.toLocaleTimeString("en-IN", { hour: "2-digit", minute: "2-digit" });
+}
+function fmtDate(d) {
+  return d.toLocaleDateString("en-IN", { day: "numeric", month: "short" });
+}
+
+// ── Revenue / Wallet data ─────────────────────────────────────────
+const revenueTransactions = [];
+let totalRevenue = 94200;
+
+// Seed initial transactions
+(function seedRevenue() {
+  const statuses = ["Paid","Paid","Paid","Pending","Paid","Paid","Pending"];
+  for (let i = 0; i < 12; i++) {
+    const d = new Date(Date.now() - rnd(0, 7 * 24 * 60 * 60 * 1000));
+    revenueTransactions.unshift({
+      society: societies[i % societies.length],
+      amount:  rnd(80, 350),
+      time:    d,
+      status:  statuses[i % statuses.length],
+    });
+  }
+})();
+
+window._addRevenueTransaction = function(tx) {
+  revenueTransactions.unshift({
+    society: tx.society,
+    amount:  tx.amount,
+    time:    new Date(),
+    status:  "Paid",
+  });
+  totalRevenue += tx.amount;
+  // Update dashboard counter
+  const el = document.getElementById("revenueCounter");
+  if (el) {
+    el.setAttribute("data-counter", totalRevenue);
+    animateCounter(el);
+  }
+};
+
+// ── Bookings data ─────────────────────────────────────────────────
+const bookingsData = [
+  { society:"Shanti Vihar CHS", slot:"B2-04", time:"6:30 PM", status:"Confirmed" },
+  { society:"Gokul Residency",  slot:"A1-11", time:"5:15 PM", status:"Active" },
+  { society:"Sai Darshan Heights", slot:"C3-07", time:"4:00 PM", status:"Completed" },
+  { society:"Lakeview CHS",     slot:"B1-02", time:"3:45 PM", status:"Completed" },
+  { society:"Palm Grove Apts",  slot:"A2-09", time:"2:30 PM", status:"Confirmed" },
+  { society:"Lotus Enclave",    slot:"D1-03", time:"1:15 PM", status:"Completed" },
+  { society:"Sunrise CHS",      slot:"C2-08", time:"12:00 PM",status:"Completed" },
+  { society:"Green Meadows",    slot:"A3-05", time:"11:00 AM",status:"Completed" },
+];
+
+// ── Societies data ────────────────────────────────────────────────
+const societiesData = [
+  { name:"Shanti Vihar CHS",      slots:30, rate:120, status:"Active" },
+  { name:"Gokul Residency",        slots:20, rate:100, status:"Active" },
+  { name:"Sai Darshan Heights",    slots:25, rate:80,  status:"Active" },
+  { name:"Lakeview CHS",           slots:15, rate:150, status:"Active" },
+  { name:"Green Meadows Society",  slots:40, rate:90,  status:"Active" },
+  { name:"Palm Grove Apartments",  slots:18, rate:130, status:"Active" },
+  { name:"Lotus Enclave",          slots:22, rate:110, status:"Active" },
+  { name:"Sunrise CHS",            slots:35, rate:70,  status:"Active" },
+];
+
+// ── OTP data ──────────────────────────────────────────────────────
+const otpData = [];
+(function seedOtp() {
+  const phones = ["+919876543210","+447911123456","+14155552671","+919123456789","+447700900123"];
+  const statuses = ["Approved","Approved","Approved","Approved","Failed","Approved","Approved"];
+  for (let i = 0; i < 10; i++) {
+    const d = new Date(Date.now() - rnd(0, 3 * 24 * 60 * 60 * 1000));
+    otpData.unshift({
+      phone:   phones[i % phones.length],
+      society: societies[i % societies.length],
+      time:    d,
+      status:  statuses[i % statuses.length],
+    });
+  }
+})();
+
+// ── Panel open/close ──────────────────────────────────────────────
+window.openStatPanel = function(type) {
+  const panelMap = {
+    revenue:   "statPanelRevenue",
+    bookings:  "statPanelBookings",
+    societies: "statPanelSocieties",
+    otp:       "statPanelOtp",
+  };
+  const id = panelMap[type];
+  if (!id) return;
+  const panel = document.getElementById(id);
+  if (!panel) return;
+
+  // Populate content
+  if (type === "revenue")   populateRevenue();
+  if (type === "bookings")  populateBookings();
+  if (type === "societies") populateSocieties();
+  if (type === "otp")       populateOtp();
+
+  panel.classList.add("is-open");
+  panel.removeAttribute("aria-hidden");
+  document.body.style.overflow = "hidden";
+};
+
+window.closeStatPanel = function(type) {
+  const panelMap = {
+    revenue:   "statPanelRevenue",
+    bookings:  "statPanelBookings",
+    societies: "statPanelSocieties",
+    otp:       "statPanelOtp",
+  };
+  const panel = document.getElementById(panelMap[type]);
+  if (!panel) return;
+  panel.classList.remove("is-open");
+  panel.setAttribute("aria-hidden", "true");
+  document.body.style.overflow = "";
+};
+
+document.addEventListener("keydown", e => {
+  if (e.key === "Escape") {
+    ["revenue","bookings","societies","otp"].forEach(t => window.closeStatPanel(t));
+  }
+});
+
+// ── Populate functions ────────────────────────────────────────────
+function statusBadge(s) {
+  const map = {
+    "Paid":      "confirmed", "Pending": "db-status-pending",
+    "Confirmed": "confirmed", "Active":  "active",
+    "Completed": "completed", "Approved":"confirmed",
+    "Failed":    "db-status-failed",
+  };
+  return `<span class="db-status ${map[s]||''}">${s}</span>`;
+}
+
+function populateRevenue() {
+  const list = document.getElementById("spRevList");
+  if (!list) return;
+  // Update summary
+  const el = document.getElementById("spRevTotal");
+  if (el) el.textContent = `INR ${totalRevenue.toLocaleString("en-IN")}`;
+
+  list.innerHTML = revenueTransactions.map((tx, i) => `
+    <div class="sp-row" style="animation-delay:${i*40}ms">
+      <span>${tx.society}</span>
+      <span style="color:var(--cyan);font-weight:700">INR ${tx.amount}</span>
+      <span>${fmtTime(tx.time)}, ${fmtDate(tx.time)}</span>
+      <span>${statusBadge(tx.status)}</span>
+    </div>`).join("");
+}
+
+function populateBookings() {
+  const list = document.getElementById("spBookingsList");
+  if (!list) return;
+  list.innerHTML = bookingsData.map((b, i) => `
+    <div class="sp-row" style="animation-delay:${i*40}ms">
+      <span>${b.society}</span>
+      <span style="font-family:ui-monospace,monospace;font-size:0.82rem">${b.slot}</span>
+      <span>${b.time}</span>
+      <span>${statusBadge(b.status)}</span>
+    </div>`).join("");
+}
+
+function populateSocieties() {
+  const list = document.getElementById("spSocietiesList");
+  if (!list) return;
+  list.innerHTML = societiesData.map((s, i) => `
+    <div class="sp-row" style="animation-delay:${i*40}ms">
+      <span>${s.name}</span>
+      <span>${s.slots} slots</span>
+      <span style="color:var(--cyan)">INR ${s.rate}/hr</span>
+      <span>${statusBadge(s.status)}</span>
+    </div>`).join("");
+}
+
+function populateOtp() {
+  const list = document.getElementById("spOtpList");
+  if (!list) return;
+  list.innerHTML = otpData.map((o, i) => `
+    <div class="sp-row" style="animation-delay:${i*40}ms">
+      <span style="font-family:ui-monospace,monospace;font-size:0.82rem">${o.phone}</span>
+      <span>${o.society}</span>
+      <span>${fmtTime(o.time)}, ${fmtDate(o.time)}</span>
+      <span>${statusBadge(o.status)}</span>
+    </div>`).join("");
+}

@@ -487,7 +487,7 @@
 
               <!-- Stats row -->
               <div class="db-stats">
-                <article class="db-stat-card glow-card">
+                <article class="db-stat-card glow-card" id="statCardBookings" role="button" tabindex="0" style="cursor:pointer" onclick="openStatPanel('bookings')">
                   <div class="db-stat-icon">
                     <img src="./assets/icon-total-bookings.png" alt="Total Bookings" />
                   </div>
@@ -497,17 +497,17 @@
                     <span class="db-stat-growth up">↑ 18.4% this week</span>
                   </div>
                 </article>
-                <article class="db-stat-card glow-card">
+                <article class="db-stat-card glow-card" id="statCardRevenue" role="button" tabindex="0" style="cursor:pointer" onclick="openStatPanel('revenue')">
                   <div class="db-stat-icon">
                     <img src="./assets/icon-revenue.png" alt="Revenue" />
                   </div>
                   <div class="db-stat-body">
                     <p class="db-stat-label">Revenue (INR)</p>
-                    <strong class="db-stat-num" data-counter="94200">0</strong>
+                    <strong class="db-stat-num" id="revenueCounter" data-counter="94200">0</strong>
                     <span class="db-stat-growth up">↑ 12.1% this week</span>
                   </div>
                 </article>
-                <article class="db-stat-card glow-card">
+                <article class="db-stat-card glow-card" id="statCardSocieties" role="button" tabindex="0" style="cursor:pointer" onclick="openStatPanel('societies')">
                   <div class="db-stat-icon">
                     <img src="./assets/icon-active-societies.png" alt="Active Societies" />
                   </div>
@@ -517,7 +517,7 @@
                     <span class="db-stat-growth up">↑ 4 new this week</span>
                   </div>
                 </article>
-                <article class="db-stat-card glow-card">
+                <article class="db-stat-card glow-card" id="statCardOtp" role="button" tabindex="0" style="cursor:pointer" onclick="openStatPanel('otp')">
                   <div class="db-stat-icon">
                     <img src="./assets/icon-otp.png" alt="OTP Approval Rate" />
                   </div>
@@ -816,6 +816,136 @@
     ></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"></script>
     <script src="./script.js"></script>
+
+    <!-- ── Stat Detail Panels ─────────────────────────────────── -->
+
+    <!-- Revenue / Wallet -->
+    <div class="stat-panel" id="statPanelRevenue" aria-hidden="true">
+      <div class="sp-header">
+        <button class="sp-back" onclick="closeStatPanel('revenue')">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
+          Back
+        </button>
+        <h3>Revenue &amp; Wallet</h3>
+        <span class="db-badge db-badge-live">● Live</span>
+      </div>
+      <div class="sp-summary">
+        <div class="sp-sum-card">
+          <p class="sp-sum-label">Total Revenue</p>
+          <strong class="sp-sum-num" id="spRevTotal">INR 94,200</strong>
+        </div>
+        <div class="sp-sum-card">
+          <p class="sp-sum-label">This Week</p>
+          <strong class="sp-sum-num" style="color:#4ade80">↑ INR 11,340</strong>
+        </div>
+        <div class="sp-sum-card">
+          <p class="sp-sum-label">Pending</p>
+          <strong class="sp-sum-num" style="color:#f87171">INR 2,400</strong>
+        </div>
+      </div>
+      <div class="sp-table-wrap">
+        <div class="sp-table-head">
+          <span>Society</span><span>Amount</span><span>Time</span><span>Status</span>
+        </div>
+        <div id="spRevList" class="sp-list"></div>
+      </div>
+    </div>
+
+    <!-- Total Bookings -->
+    <div class="stat-panel" id="statPanelBookings" aria-hidden="true">
+      <div class="sp-header">
+        <button class="sp-back" onclick="closeStatPanel('bookings')">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
+          Back
+        </button>
+        <h3>Total Bookings</h3>
+        <span class="db-badge db-badge-live">● Live</span>
+      </div>
+      <div class="sp-summary">
+        <div class="sp-sum-card">
+          <p class="sp-sum-label">All Time</p>
+          <strong class="sp-sum-num">2,840</strong>
+        </div>
+        <div class="sp-sum-card">
+          <p class="sp-sum-label">This Week</p>
+          <strong class="sp-sum-num" style="color:#4ade80">↑ 523</strong>
+        </div>
+        <div class="sp-sum-card">
+          <p class="sp-sum-label">Today</p>
+          <strong class="sp-sum-num">74</strong>
+        </div>
+      </div>
+      <div class="sp-table-wrap">
+        <div class="sp-table-head">
+          <span>Society</span><span>Slot</span><span>Time</span><span>Status</span>
+        </div>
+        <div id="spBookingsList" class="sp-list"></div>
+      </div>
+    </div>
+
+    <!-- Active Societies -->
+    <div class="stat-panel" id="statPanelSocieties" aria-hidden="true">
+      <div class="sp-header">
+        <button class="sp-back" onclick="closeStatPanel('societies')">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
+          Back
+        </button>
+        <h3>Active Societies</h3>
+        <span class="db-badge db-badge-live">● Live</span>
+      </div>
+      <div class="sp-summary">
+        <div class="sp-sum-card">
+          <p class="sp-sum-label">Total Active</p>
+          <strong class="sp-sum-num">128</strong>
+        </div>
+        <div class="sp-sum-card">
+          <p class="sp-sum-label">New This Week</p>
+          <strong class="sp-sum-num" style="color:#4ade80">↑ 4</strong>
+        </div>
+        <div class="sp-sum-card">
+          <p class="sp-sum-label">Avg Slots</p>
+          <strong class="sp-sum-num">22</strong>
+        </div>
+      </div>
+      <div class="sp-table-wrap">
+        <div class="sp-table-head">
+          <span>Society</span><span>Slots</span><span>Rate/hr</span><span>Status</span>
+        </div>
+        <div id="spSocietiesList" class="sp-list"></div>
+      </div>
+    </div>
+
+    <!-- OTP Approval Rate -->
+    <div class="stat-panel" id="statPanelOtp" aria-hidden="true">
+      <div class="sp-header">
+        <button class="sp-back" onclick="closeStatPanel('otp')">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
+          Back
+        </button>
+        <h3>OTP Approval Rate</h3>
+        <span class="db-badge db-badge-live">● Live</span>
+      </div>
+      <div class="sp-summary">
+        <div class="sp-sum-card">
+          <p class="sp-sum-label">Approval Rate</p>
+          <strong class="sp-sum-num" style="color:#4ade80">99%</strong>
+        </div>
+        <div class="sp-sum-card">
+          <p class="sp-sum-label">Total Sent</p>
+          <strong class="sp-sum-num">18,420</strong>
+        </div>
+        <div class="sp-sum-card">
+          <p class="sp-sum-label">Failed</p>
+          <strong class="sp-sum-num" style="color:#f87171">184</strong>
+        </div>
+      </div>
+      <div class="sp-table-wrap">
+        <div class="sp-table-head">
+          <span>Phone</span><span>Society</span><span>Time</span><span>Status</span>
+        </div>
+        <div id="spOtpList" class="sp-list"></div>
+      </div>
+    </div>
     <script>
     // Guaranteed fallback — define map modal opener if script.js failed to set it
     if (!window._openLocMapModal) {
