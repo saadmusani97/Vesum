@@ -839,6 +839,21 @@
     </div>
 
     <script>
+    // Base data — always available regardless of script.js load state
+    window._admBase = {
+      revenue: 94200, bookings: 2840, societies: 128, otp: 99,
+      txns: [
+        {s:'Shanti Vihar CHS',     a:240, t:'6:30 PM, 4 May',  st:'Paid'},
+        {s:'Gokul Residency',       a:180, t:'5:15 PM, 4 May',  st:'Paid'},
+        {s:'Sai Darshan Heights',   a:320, t:'4:00 PM, 4 May',  st:'Paid'},
+        {s:'Lakeview CHS',          a:150, t:'3:45 PM, 4 May',  st:'Pending'},
+        {s:'Palm Grove Apartments', a:260, t:'2:30 PM, 4 May',  st:'Paid'},
+        {s:'Lotus Enclave',         a:110, t:'1:15 PM, 4 May',  st:'Paid'},
+        {s:'Sunrise CHS',           a:200, t:'12:00 PM, 4 May', st:'Paid'},
+        {s:'Green Meadows Society', a:340, t:'11:00 AM, 4 May', st:'Paid'},
+      ],
+    };
+
     window.submitAdminLogin = function() {
       var input = document.getElementById('adminPassInput');
       var err   = document.getElementById('adminLoginError');
@@ -858,12 +873,66 @@
             panel.style.opacity = '1';
             panel.style.transform = 'translateY(0)';
           });
-          if (window.populateAdminPanel) window.populateAdminPanel();
+          // Use script.js populateAdminPanel if available, else use base data
+          if (window.populateAdminPanel) {
+            window.populateAdminPanel();
+          } else {
+            window._fillAdminBase();
+          }
         }
       } else {
         if (err) err.textContent = '⚠ Incorrect password';
         if (input) { input.classList.add('is-error'); setTimeout(function(){ input.classList.remove('is-error'); input.value=''; }, 1200); }
       }
+    };
+
+    window._fillAdminBase = function() {
+      var d = window._admBase;
+      function countUp(el, target, pre, suf) {
+        if (!el) return;
+        var start = performance.now();
+        (function tick(now) {
+          var p = Math.min((now - start) / 1000, 1);
+          var e = 1 - Math.pow(1 - p, 3);
+          el.textContent = pre + Math.round(e * target).toLocaleString('en-IN') + suf;
+          if (p < 1) requestAnimationFrame(tick);
+        })(start);
+      }
+      countUp(document.getElementById('admRevNum'),  d.revenue,   'INR ', '');
+      countUp(document.getElementById('admBookNum'), d.bookings,  '',     '');
+      countUp(document.getElementById('admSocNum'),  d.societies, '',     '');
+      countUp(document.getElementById('admOtpNum'),  d.otp,       '',     '%');
+
+      var list = document.getElementById('admTransList');
+      if (list) {
+        var statusColor = {Paid:'confirmed', Pending:'db-status-pending'};
+        list.innerHTML = d.txns.map(function(tx, i) {
+          return '<div class="sp-row" style="grid-template-columns:2fr 1fr 1.2fr 1fr;animation-delay:'+i*40+'ms">'
+            + '<span>'+tx.s+'</span>'
+            + '<span style="color:var(--cyan);font-weight:700">INR '+tx.a+'</span>'
+            + '<span>'+tx.t+'</span>'
+            + '<span><span class="db-status '+(statusColor[tx.st]||'')+'">'+tx.st+'</span></span>'
+            + '</div>';
+        }).join('');
+      }
+
+      // Charts
+      if (typeof Chart === 'undefined') return;
+      var days = ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'];
+      var revData = [8200,11400,9800,13200,10600,15800,12400];
+      var rCtx = document.getElementById('admRevenueChart');
+      if (rCtx) new Chart(rCtx, {
+        type:'line',
+        data:{ labels:days, datasets:[{data:revData, borderColor:'#46d9ff', backgroundColor:'rgba(70,217,255,0.08)', borderWidth:2, pointBackgroundColor:'#46d9ff', pointRadius:4, tension:0.4, fill:true}]},
+        options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{grid:{color:'rgba(255,255,255,0.05)'},ticks:{color:'rgba(226,236,247,0.52)',font:{size:11}}},y:{grid:{color:'rgba(255,255,255,0.05)'},ticks:{color:'rgba(226,236,247,0.52)',font:{size:11}}}},animation:{duration:1000}},
+      });
+      var socs = ['Shanti Vihar','Gokul Res.','Sai Darshan','Lakeview','Palm Grove'];
+      var bCtx = document.getElementById('admBookingsChart');
+      if (bCtx) new Chart(bCtx, {
+        type:'doughnut',
+        data:{ labels:socs, datasets:[{data:[680,520,440,380,290], backgroundColor:['#46d9ff','#a855f7','#4ade80','#f472b6','#fb923c'], borderWidth:0, hoverOffset:8}]},
+        options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:true,position:'bottom',labels:{color:'rgba(226,236,247,0.72)',font:{size:11},padding:12}}},animation:{duration:1000}},
+      });
     };
     </script>
 
