@@ -910,7 +910,8 @@ function renderLocationOptions() {
       </span>
       <span class="meta">Select →</span>
     `;
-    button.addEventListener("click", () => {
+    button.addEventListener("click", (e) => {
+      e.stopPropagation();
       onboardingState.selectedLocation = location;
       renderLocationOptions();
       setTimeout(() => goToWizardStep(1), 180);
@@ -1489,20 +1490,24 @@ updateNavbar();
     requestAnimationFrame(() => {
       modal.classList.add("lmm-open");
 
-      // Roads draw
+      // Roads draw — set dasharray immediately, animate offset
       modal.querySelectorAll(".lmm-road-main, .lmm-road-sec").forEach((l, i) => {
-        l.style.strokeDasharray  = "500";
-        l.style.strokeDashoffset = "500";
+        const len = 600;
+        l.setAttribute("stroke-dasharray", len);
+        l.setAttribute("stroke-dashoffset", len);
         setTimeout(() => {
-          l.style.transition = `stroke-dashoffset ${0.6 + i * 0.04}s cubic-bezier(0.22,1,0.36,1)`;
-          l.style.strokeDashoffset = "0";
-        }, 300 + i * 35);
+          l.style.transition = `stroke-dashoffset ${0.7 + i * 0.05}s cubic-bezier(0.22,1,0.36,1)`;
+          l.setAttribute("stroke-dashoffset", "0");
+        }, 250 + i * 40);
       });
+      // Buildings
       modal.querySelectorAll(".lmm-building").forEach((b, i) => {
-        setTimeout(() => b.classList.add("lmm-in"), 400 + i * 60);
+        setTimeout(() => b.classList.add("lmm-in"), 350 + i * 60);
       });
-      setTimeout(() => modal.querySelector(".lmm-pin")?.classList.add("lmm-in"), 380);
-      setTimeout(() => modal.querySelector(".lmm-info")?.classList.add("lmm-in"), 500);
+      // Pin
+      setTimeout(() => modal.querySelector(".lmm-pin")?.classList.add("lmm-in"), 320);
+      // Info
+      setTimeout(() => modal.querySelector(".lmm-info")?.classList.add("lmm-in"), 480);
     });
 
     function close() {
