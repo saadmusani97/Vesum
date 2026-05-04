@@ -1627,7 +1627,7 @@ updateNavbar();
     tick();
     timerInterval = setInterval(tick, 30000);
   }
-})()();
+})();
 
 // ── Stat Detail Panels ────────────────────────────────────────────
 
