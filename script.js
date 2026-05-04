@@ -1443,7 +1443,12 @@ updateNavbar();
                    || "Mumbai, Maharashtra · Live";
 
     // Get card position to animate FROM
-    const rect = card ? card.getBoundingClientRect() : { left: window.innerWidth/2 - 120, top: window.innerHeight/2 - 70, width: 240, height: 140 };
+    const rawRect = card ? card.getBoundingClientRect() : null;
+    const rect = (rawRect && rawRect.width > 0) ? rawRect : {
+      left: (window.innerWidth - 240) / 2,
+      top:  (window.innerHeight - 140) / 2,
+      width: 240, height: 140
+    };
 
     const modal = document.createElement("div");
     modal.id = "locMapModal";
