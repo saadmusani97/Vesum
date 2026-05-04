@@ -1434,7 +1434,7 @@ updateNavbar();
 
   function openMapModal() {
     document.getElementById("locMapModal")?.remove();
-    if (card) { card.style.transform = ""; }
+    if (card) card.style.transform = "";
 
     const locName   = document.getElementById("locMapInfoName")?.textContent
                    || document.getElementById("locMapName")?.textContent
@@ -1442,17 +1442,8 @@ updateNavbar();
     const locCoords = document.getElementById("locMapCoords")?.textContent
                    || "Mumbai, Maharashtra · Live";
 
-    // Get card position to animate FROM
-    const rawRect = card ? card.getBoundingClientRect() : null;
-    const rect = (rawRect && rawRect.width > 0) ? rawRect : {
-      left: (window.innerWidth - 240) / 2,
-      top:  (window.innerHeight - 140) / 2,
-      width: 240, height: 140
-    };
-
     const modal = document.createElement("div");
     modal.id = "locMapModal";
-    modal.style.cssText = "position:fixed;inset:0;z-index:9999;pointer-events:none";
     modal.innerHTML = `
       <div class="lmm-backdrop"></div>
       <div class="lmm-card" role="dialog" aria-modal="true">
@@ -1494,61 +1485,31 @@ updateNavbar();
       </div>`;
     document.body.appendChild(modal);
 
-    const lmmCard = modal.querySelector(".lmm-card");
+    // Animate in — simple scale from 0 to 1
+    requestAnimationFrame(() => {
+      modal.classList.add("lmm-open");
 
-    // Start from card's exact position & size, then spring to center
-    lmmCard.style.position   = "fixed";
-    lmmCard.style.left       = rect.left + "px";
-    lmmCard.style.top        = rect.top  + "px";
-    lmmCard.style.width      = rect.width  + "px";
-    lmmCard.style.height     = rect.height + "px";
-    lmmCard.style.borderRadius = "16px";
-    lmmCard.style.transition = "none";
-    modal.style.pointerEvents = "auto";
-
-    requestAnimationFrame(() => requestAnimationFrame(() => {
-      // Animate to full size centered
-      lmmCard.style.transition = "left 480ms cubic-bezier(0.34,1.2,0.64,1), top 480ms cubic-bezier(0.34,1.2,0.64,1), width 480ms cubic-bezier(0.34,1.2,0.64,1), height 480ms cubic-bezier(0.34,1.2,0.64,1), border-radius 480ms ease";
-      const tw = Math.min(420, window.innerWidth - 40);
-      const th = 380;
-      lmmCard.style.left   = ((window.innerWidth  - tw) / 2) + "px";
-      lmmCard.style.top    = ((window.innerHeight - th) / 2) + "px";
-      lmmCard.style.width  = tw + "px";
-      lmmCard.style.height = th + "px";
-      lmmCard.style.borderRadius = "20px";
-
-      modal.querySelector(".lmm-backdrop").style.opacity = "1";
-
-      // Roads draw after card opens
-      setTimeout(() => {
-        modal.querySelectorAll(".lmm-road-main, .lmm-road-sec").forEach((l, i) => {
-          l.style.strokeDasharray  = "500";
-          l.style.strokeDashoffset = "500";
-          setTimeout(() => {
-            l.style.transition = `stroke-dashoffset ${0.6 + i * 0.04}s cubic-bezier(0.22,1,0.36,1)`;
-            l.style.strokeDashoffset = "0";
-          }, i * 35);
-        });
-        modal.querySelectorAll(".lmm-building").forEach((b, i) => {
-          setTimeout(() => b.classList.add("lmm-in"), 200 + i * 60);
-        });
-        setTimeout(() => modal.querySelector(".lmm-pin")?.classList.add("lmm-in"), 200);
-        setTimeout(() => modal.querySelector(".lmm-info")?.classList.add("lmm-in"), 320);
-      }, 300);
-    }));
+      // Roads draw
+      modal.querySelectorAll(".lmm-road-main, .lmm-road-sec").forEach((l, i) => {
+        l.style.strokeDasharray  = "500";
+        l.style.strokeDashoffset = "500";
+        setTimeout(() => {
+          l.style.transition = `stroke-dashoffset ${0.6 + i * 0.04}s cubic-bezier(0.22,1,0.36,1)`;
+          l.style.strokeDashoffset = "0";
+        }, 300 + i * 35);
+      });
+      modal.querySelectorAll(".lmm-building").forEach((b, i) => {
+        setTimeout(() => b.classList.add("lmm-in"), 400 + i * 60);
+      });
+      setTimeout(() => modal.querySelector(".lmm-pin")?.classList.add("lmm-in"), 380);
+      setTimeout(() => modal.querySelector(".lmm-info")?.classList.add("lmm-in"), 500);
+    });
 
     function close() {
-      // Shrink back to card position
-      lmmCard.style.transition = "left 350ms cubic-bezier(0.22,1,0.36,1), top 350ms cubic-bezier(0.22,1,0.36,1), width 350ms cubic-bezier(0.22,1,0.36,1), height 350ms cubic-bezier(0.22,1,0.36,1), opacity 300ms ease, border-radius 350ms ease";
-      lmmCard.style.left   = rect.left + "px";
-      lmmCard.style.top    = rect.top  + "px";
-      lmmCard.style.width  = rect.width  + "px";
-      lmmCard.style.height = rect.height + "px";
-      lmmCard.style.opacity = "0";
-      modal.querySelector(".lmm-backdrop").style.opacity = "0";
-      setTimeout(() => modal.remove(), 380);
+      modal.classList.remove("lmm-open");
+      modal.classList.add("lmm-out");
+      setTimeout(() => modal.remove(), 400);
     }
-
     modal.querySelector(".lmm-close").addEventListener("click", close);
     modal.querySelector(".lmm-backdrop").addEventListener("click", close);
     document.addEventListener("keydown", function esc(e) {
