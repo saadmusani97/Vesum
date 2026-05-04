@@ -1,10 +1,5 @@
 {
   "version": 2,
-  "functions": {
-    "api/**/*.js": {
-      "runtime": "@vercel/node@3"
-    }
-  },
   "routes": [
     { "src": "/api/locations", "dest": "/api/locations.js" },
     { "src": "/api/otp/send", "dest": "/api/otp/send.js" },
