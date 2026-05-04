@@ -1,0 +1,12 @@
+# Not needed on Vercel — API routes are in /api folder
+server.js
+db.js
+Procfile
+
+# Dev only
+.env
+.env.local
+.vscode
+
+# Already ignored
+node_modules
